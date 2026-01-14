@@ -60,7 +60,7 @@ public class MainPage extends JFrame {
     private JButton diffOnlyBtn;
     
     public MainPage(Controller controller) {
-        super("VPI/VPS Comparator");
+        super("VP Comparator");
         this.controller = controller;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);

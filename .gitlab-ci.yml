@@ -16,6 +16,8 @@ build_exe:
     # Extraire la version depuis le tag (v1.0.0 → 1.0.0)
     - VERSION=${CI_COMMIT_TAG}
 
+    - java -version
+
     # Build JAR
     - mvn clean package
 

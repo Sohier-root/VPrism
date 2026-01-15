@@ -19,7 +19,7 @@ build_exe:
     - java -version
 
     # Build JAR
-    - mvn clean package
+    - ./mvnw.cmd clean package
 
     # Génération EXE
     - jpackage

@@ -18,20 +18,14 @@ build_exe:
 
     - java -version
 
-    # Créer le dossier de sortie
-    - mkdir out
-
-    # Compiler tous les fichiers Java dans src/ (adapter le chemin si nécessaire)
-    - javac -d out src/**/*.java
-
-    # Créer le JAR exécutable
-    - jar cfe monapp.jar com.myapp.Main -C out .
+    # Build JAR
+    - mvn clean package
 
     # Génération EXE
-    - jpackage ^
-        --input . ^
-        --main-jar monapp.jar ^
-        --name ${APP_NAME}-${CI_COMMIT_TAG#v} ^
+    - jpackage
+        --input target/
+        --name ${APP_NAME}-${VERSION}
+        --main-jar monapp.jar
         --type exe
 
   artifacts:

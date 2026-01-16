@@ -13,15 +13,9 @@ build_exe:
 
     # Créer le dossier de sortie
     - New-Item -ItemType Directory -Force -Path out
-
-    # Construire le CLASSPATH (séparateur ; sous Windows)
     - $CLASSPATH = (Get-ChildItem lib -Filter *.jar -Recurse | ForEach-Object { $_.FullName }) -join ";"
-
-    # Lister les sources Java
-    - Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName } > sources.txt
-
-    # Compilation
-    - javac -d out -cp "$CLASSPATH" @sources.txt
+    - $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
+    - javac -d out -cp "$CLASSPATH" $SOURCES
 
     # Copier les ressources (équivalent rsync)
     - Copy-Item src\* out -Recurse -Force -Exclude *.java

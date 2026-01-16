@@ -7,28 +7,38 @@ variables:
 
 build_exe:
   stage: build
-  image: eclipse-temurin:20
   tags:
-    - windows
-  rules:
-    - if: $CI_COMMIT_TAG
+    - WINDOWS
   script:
-    # Extraire la version depuis le tag (v1.0.0 → 1.0.0)
-    - VERSION=${CI_COMMIT_TAG}
 
-    # Build JAR
-    - mvn clean package
+    # Créer le dossier de sortie
+    - New-Item -ItemType Directory -Force -Path out
 
-    # Génération EXE
-    - jpackage
-        --input target/
-        --name ${APP_NAME}-${VERSION}
-        --main-jar monapp.jar
+    # Construire le CLASSPATH (séparateur ; sous Windows)
+    - $CLASSPATH = (Get-ChildItem lib -Filter *.jar -Recurse | ForEach-Object { $_.FullName }) -join ";"
+
+    # Lister les sources Java
+    - Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName } > sources.txt
+
+    # Compilation
+    - javac -d out -cp "$CLASSPATH" @sources.txt
+
+    # Copier les ressources (équivalent rsync)
+    - Copy-Item src\* out -Recurse -Force -Exclude *.java
+
+    # Création du JAR
+    - jar cfe monapp.jar com.myapp.Main -C out .
+
+    # Création de l'EXE Windows
+    - jpackage `
+        --input . `
+        --main-jar monapp.jar `
+        --name test `
         --type exe
 
   artifacts:
     paths:
-      - "${APP_NAME}-*.exe"
+      - "*.exe"
 
 release:
   stage: release

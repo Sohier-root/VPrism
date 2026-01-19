@@ -2,16 +2,13 @@ stages:
   - build
   - release
 
-variables:
-  APP_NAME: "VPCompare"
-
 build_exe:
   stage: build
   tags:
     - WINDOWS
   variables:
     MAIN_CLASS: "com.stilog.analysevpi.Main"
-    APP_NAME: "VPCompare"
+    APP_NAME: "Compare"
     JAR_NAME: "VPCompareJar"
   script:
     - |
@@ -29,6 +26,7 @@ build_exe:
       jar cfe "app_input\$($JAR_NAME).jar" $MAIN_CLASS -C out .
       if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
       jpackage --input app_input --main-jar "$($JAR_NAME).jar" --main-class "$MAIN_CLASS" --name "$APP_NAME" --type exe  --dest dist --java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
+      jpackage --input app_input --main-jar "$($JAR_NAME).jar" --main-class "$MAIN_CLASS" --name "test" --type exe  --dest dist --java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
 
 
   artifacts:
@@ -37,6 +35,8 @@ build_exe:
     expire_in: 1 week
 
 release:
+  variables:
+    APP_NAME: "VPCompare"
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   rules:

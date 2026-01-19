@@ -16,36 +16,22 @@ build_exe:
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
       java -version
       if (Test-Path out) { Remove-Item out -Recurse -Force }
-      if (Test-Path app_input) { Remove-Item app_input -Recurse -Force } # Dossier propre pour jpackage
+      if (Test-Path app_input) { Remove-Item app_input -Recurse -Force }
       New-Item -ItemType Directory -Force -Path out
       New-Item -ItemType Directory -Force -Path app_input
-
-      # 2. Construction du Classpath pour la compilation
       $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
       $CP = ($LIBS.FullName -join ";") + ";."
-
-      # 3. Compilation
       $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
       javac -d out -cp "$CP" $SOURCES
-
-      # 4. Copie des ressources dans le dossier 'out'
       if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
-
-      # 5. Création du JAR principal (SANS les dépendances à l'intérieur)
       jar cfe "app_input\$($env:APP_NAME).jar" $env:MAIN_CLASS -C out .
-
-      # 6. COPIER TOUTES LES DÉPENDANCES (.jar) dans le dossier app_input
-      # C'est l'étape cruciale pour jpackage
       if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
-
-      # 7. Création de l'EXE
-      # On pointe --input vers 'app_input' qui contient TOUS les jars
       jpackage `
         --input app_input `
         --main-jar "$($env:APP_NAME).jar" `
         --name "$env:APP_NAME" `
         --type exe `
-        --dest dist `
+        --dest dist 
 
   artifacts:
     paths:

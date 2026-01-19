@@ -19,12 +19,14 @@ build_exe:
       New-Item -ItemType Directory -Force -Path out
       New-Item -ItemType Directory -Force -Path app_input
       $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
+      $ICON = Get-ChildItem icon -Filter *.ico -Recurse
       $CP = ($LIBS.FullName -join ";") + ";."
       $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
       javac -encoding UTF-8 -d out -cp $CP $SOURCES
       if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
       jar cfe "app_input\$($JAR_NAME).jar" $MAIN_CLASS -C out .
       if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
+      if($ICON) { Copy-Item icon\*.ico icon\ -Force }
       jpackage --input app_input --main-jar "$($JAR_NAME).jar" --main-class "$MAIN_CLASS" --name "$APP_NAME" --type exe  --dest dist --icon "icon/Icon.ico"--java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
 
 

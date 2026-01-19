@@ -11,6 +11,7 @@ build_exe:
     - WINDOWS
   variables:
     MAIN_CLASS: "com.stilog.analysevpi.Main"
+    APP_NAME: "VPCompare"
   script:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path

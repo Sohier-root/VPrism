@@ -12,6 +12,12 @@ import org.w3c.dom.Node;
 
 public class MethodUtil {
 
+	/**
+	 * Transforme un Node (xml) en String 
+	 * @param node
+	 * @return
+	 * @throws Exception
+	 */
 	public static String nodeToString(Node node) throws Exception {
 	    TransformerFactory tf = TransformerFactory.newInstance();
 	    Transformer transformer = tf.newTransformer();
@@ -25,5 +31,4 @@ public class MethodUtil {
 
 	    return writer.toString().trim();
 	}
-	
 }

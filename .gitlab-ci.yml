@@ -15,38 +15,37 @@ build_exe:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
       java -version
-      # 1. Nettoyage et préparation
       if (Test-Path out) { Remove-Item out -Recurse -Force }
-      if (Test-Path dist) { Remove-Item dist -Recurse -Force }
+      if (Test-Path app_input) { Remove-Item app_input -Recurse -Force } # Dossier propre pour jpackage
       New-Item -ItemType Directory -Force -Path out
-      
+      New-Item -ItemType Directory -Force -Path app_input
+
       # 2. Construction du Classpath pour la compilation
-      $CP = "."
-      if (Test-Path lib) {
-          $libs = (Get-ChildItem lib -Filter *.jar -Recurse | ForEach-Object { $_.FullName })
-          if ($libs) { $CP = ($libs -join ";") + ";." }
-      }
+      $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
+      $CP = ($LIBS.FullName -join ";") + ";."
       
       # 3. Compilation
       $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
       javac -d out -cp "$CP" $SOURCES
 
-      # 4. Ressources et dépendances
-      # On copie les ressources dans 'out'
+      # 4. Copie des ressources dans le dossier 'out'
       if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
-      # On s'assure que les JAR externes sont dans le même dossier pour jpackage
-      if (Test-Path lib) { Copy-Item lib\* . -Recurse -Force }
 
-      # 5. Création du JAR principal
-      jar cfe "$($env:APP_NAME).jar" $env:MAIN_CLASS -C out .
+      # 5. Création du JAR principal (SANS les dépendances à l'intérieur)
+      jar cfe "app_input\$($env:APP_NAME).jar" $env:MAIN_CLASS -C out .
 
-      # 6. Création de l'EXE
+      # 6. COPIER TOUTES LES DÉPENDANCES (.jar) dans le dossier app_input
+      # C'est l'étape cruciale pour jpackage
+      if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
+
+      # 7. Création de l'EXE
+      # On pointe --input vers 'app_input' qui contient TOUS les jars
       jpackage `
-        --input . `
+        --input app_input `
         --main-jar "$($env:APP_NAME).jar" `
         --name "$env:APP_NAME" `
         --type exe `
-        --dest dist 
+        --dest dist `
 
   artifacts:
     paths:

@@ -23,7 +23,7 @@ build_exe:
       # 2. Construction du Classpath pour la compilation
       $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
       $CP = ($LIBS.FullName -join ";") + ";."
-      
+
       # 3. Compilation
       $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
       javac -d out -cp "$CP" $SOURCES

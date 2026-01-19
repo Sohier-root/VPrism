@@ -9,30 +9,47 @@ build_exe:
   stage: build
   tags:
     - WINDOWS
+  variables:
+    MAIN_CLASS: "com.myapp.Main"
   script:
+    - |
+      # 1. Nettoyage et préparation
+      if (Test-Path out) { Remove-Item out -Recurse -Force }
+      if (Test-Path dist) { Remove-Item dist -Recurse -Force }
+      New-Item -ItemType Directory -Force -Path out
+      
+      # 2. Construction du Classpath pour la compilation
+      $CP = "."
+      if (Test-Path lib) {
+          $libs = (Get-ChildItem lib -Filter *.jar -Recurse | ForEach-Object { $_.FullName })
+          if ($libs) { $CP = ($libs -join ";") + ";." }
+      }
+      
+      # 3. Compilation
+      $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
+      javac -d out -cp "$CP" $SOURCES
 
-    # Créer le dossier de sortie
-    - New-Item -ItemType Directory -Force -Path out
-    - $CLASSPATH = (Get-ChildItem lib -Filter *.jar -Recurse | ForEach-Object { $_.FullName }) -join ";"
-    - $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
-    - javac -d out -cp "$CLASSPATH" $SOURCES
+      # 4. Ressources et dépendances
+      # On copie les ressources dans 'out'
+      if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
+      # On s'assure que les JAR externes sont dans le même dossier pour jpackage
+      if (Test-Path lib) { Copy-Item lib\* . -Recurse -Force }
 
-    # Copier les ressources (équivalent rsync)
-    - Copy-Item src\* out -Recurse -Force -Exclude *.java
+      # 5. Création du JAR principal
+      jar cfe "$($env:APP_NAME).jar" $env:MAIN_CLASS -C out .
 
-    # Création du JAR
-    - jar cfe monapp.jar com.myapp.Main -C out .
-
-    # Création de l'EXE Windows
-    - jpackage `
+      # 6. Création de l'EXE
+      jpackage `
         --input . `
-        --main-jar monapp.jar `
-        --name test `
-        --type exe
+        --main-jar "$($env:APP_NAME).jar" `
+        --name "$env:APP_NAME" `
+        --type exe `
+        --dest dist 
 
   artifacts:
     paths:
-      - "*.exe"
+      - "dist/*.exe"
+    expire_in: 1 week
 
 release:
   stage: release

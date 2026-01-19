@@ -8,8 +8,13 @@ build_exe:
     - WINDOWS
   variables:
     MAIN_CLASS: "com.stilog.analysevpi.Main"
-    APP_NAME: "Compare"
+    APP_NAME: "VPCompare"
     JAR_NAME: "VPCompareJar"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: on_success
+    - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/
+      when: on_success
   script:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
@@ -25,8 +30,9 @@ build_exe:
       if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
       jar cfe "app_input\$($JAR_NAME).jar" $MAIN_CLASS -C out .
       if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
+      $APP_VERSION = $env:CI_COMMIT_TAG
 
-      jpackage --input app_input --main-jar "$($JAR_NAME).jar" --main-class "$MAIN_CLASS" --name "$APP_NAME" --app-version "1.0.0" --type exe  --dest dist --icon "icon/Icone.ico"--java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
+      jpackage --input app_input --main-jar "$($JAR_NAME).jar" --main-class "$MAIN_CLASS" --name "$APP_NAME" --app-version "$APP_VERSION" --type exe  --dest dist --icon "icon/Icone.ico" --java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
 
 
   artifacts:
@@ -36,7 +42,7 @@ build_exe:
 
 release:
   variables:
-    APP_NAME: "VPCompare"
+    APP_NAME: "VPCompare-release"
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   rules:

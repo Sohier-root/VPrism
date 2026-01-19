@@ -10,7 +10,7 @@ build_exe:
   tags:
     - WINDOWS
   variables:
-    MAIN_CLASS: "com.myapp.Main"
+    MAIN_CLASS: "com.stilog.analysevpi.Main"
   script:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
@@ -26,12 +26,16 @@ build_exe:
       if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
       jar cfe "app_input\$($env:APP_NAME).jar" $env:MAIN_CLASS -C out .
       if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
+
       jpackage `
-        --input app_input `
-        --main-jar "$($env:APP_NAME).jar" `
-        --name "$env:APP_NAME" `
-        --type exe `
-        --dest dist 
+      --input app_input `
+      --main-jar "$($env:APP_NAME).jar" `
+      --main-class com.stilog.analysevpi.Main `
+      --name "$env:APP_NAME" `
+      --type exe `
+      --dest dist `
+      --win-shortcut
+      # --win-console 
 
   artifacts:
     paths:

@@ -13,6 +13,7 @@ build_exe:
     MAIN_CLASS: "com.myapp.Main"
   script:
     - |
+      java -version
       # 1. Nettoyage et préparation
       if (Test-Path out) { Remove-Item out -Recurse -Force }
       if (Test-Path dist) { Remove-Item dist -Recurse -Force }

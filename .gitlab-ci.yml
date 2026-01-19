@@ -36,8 +36,8 @@ build_exe:
       --dest dist `
       --java-options "-Dfile.encoding=UTF-8" `
       --java-options "-Dsun.jnu.encoding=UTF-8" `
-      --win-shortcut
-      # --win-console 
+      --win-shortcut `
+      --win-console 
 
   artifacts:
     paths:

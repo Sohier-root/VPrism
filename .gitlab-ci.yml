@@ -22,7 +22,7 @@ build_exe:
       $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
       $CP = ($LIBS.FullName -join ";") + ";."
       $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
-      javac -d out -cp "$CP" $SOURCES
+      javac -encoding UTF-8 -d out -cp $CP $SOURCES
       if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
       jar cfe "app_input\$($env:APP_NAME).jar" $env:MAIN_CLASS -C out .
       if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
@@ -34,6 +34,8 @@ build_exe:
       --name "$env:APP_NAME" `
       --type exe `
       --dest dist `
+      --java-options "-Dfile.encoding=UTF-8" `
+      --java-options "-Dsun.jnu.encoding=UTF-8" `
       --win-shortcut
       # --win-console 
 

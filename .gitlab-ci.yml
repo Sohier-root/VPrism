@@ -13,6 +13,7 @@ build_exe:
     MAIN_CLASS: "com.myapp.Main"
   script:
     - |
+      $env:Path = "$env:JAVA_17_PATH;" + $env:Path
       java -version
       # 1. Nettoyage et préparation
       if (Test-Path out) { Remove-Item out -Recurse -Force }

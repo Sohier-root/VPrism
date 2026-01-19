@@ -10,6 +10,7 @@ import org.kordamp.ikonli.swing.FontIcon;
 
 import com.stilog.analysevpi.controller.Controller;
 import com.stilog.analysevpi.model.objects.PositionFile;
+import com.stilog.analysevpi.utils.SystemInfo;
 import com.stilog.analysevpi.view.loading.LoadingWindow;
 import com.stilog.analysevpi.view.tree.VPITree;
 
@@ -29,6 +30,8 @@ import java.io.File;
  */
 public class MainPage extends JFrame {
 	private Controller controller;
+	
+	private SystemInfo infos = SystemInfo.getInstance();
 	
 	 /*
      * Zone VPI Gauche (Référence)
@@ -61,6 +64,7 @@ public class MainPage extends JFrame {
     
     public MainPage(Controller controller) {
         super("VP Comparator");
+        this.setTitle(this.getTitle() + " (" + infos.getVersion() + ")");
         this.controller = controller;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);

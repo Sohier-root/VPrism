@@ -9,6 +9,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.stilog.analysevpi.model.GeneralCorrespondance;
+import com.stilog.analysevpi.model.objects.Entity;
 import com.stilog.analysevpi.model.objects.Parameters;
 import com.stilog.analysevpi.utils.MethodUtil;
 import com.stilog.analysevpi.utils.VPIConstants;
@@ -20,12 +21,23 @@ public class Hierarchies extends FileDatas {
 	}
 
 	@Override
-	protected List<Parameters> parseXml(String xml) {
+	protected List<Parameters> parseXml(Entity entity) {
 		List<Parameters> paramList = new ArrayList<>();
 		
-		Document doc = getDocument(xml);
+		Document doc = getDocument(entity.getAssociatedXml());
 		Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
 		
+		/*
+		 * Ajout des attribut unique (id, uid ...)
+		 */
+		String id = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
+		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+		
+		/*
+		 * Récupération de la structure
+		 */
 		paramList.addAll(computeStruct(firstNodes.getElementsByTagName(VPIConstants.XML_TAG_EVENT_STRUCT).item(0)));
 		
 		return paramList;
@@ -45,10 +57,12 @@ public class Hierarchies extends FileDatas {
 			Element resource = (Element) resourceStructNodes.item(i);
 			
 			String resourceId = ((Element)resource.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODEL).item(0)).getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
-			String resourceName = GeneralCorrespondance.getInstance().getResourceModelName(resourceId);
+			String resourceName = GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, resourceId);
+			String mandatory = resource.getElementsByTagName(VPIConstants.XML_TAG_MANDATORY).item(0).getTextContent();
 			
 			Parameters param = new Parameters(resourceName);
 			param.addAttributes(VPIConstants.PARAMETER_CONDITIONS, computeConditions(resource.getElementsByTagName(VPIConstants.XML_TAG_FILTER).item(0)));
+			param.addAttributes(VPIConstants.PARAMETER_MANDATORY, mandatory);
 			paramList.add(param);
 		}
 		

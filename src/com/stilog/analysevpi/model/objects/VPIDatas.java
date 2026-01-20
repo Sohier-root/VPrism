@@ -55,14 +55,21 @@ public class VPIDatas {
 		Decompressor.dezipper(vpiPath, outputDir);
 		
 		File filesDir = new File(outputDir);
+		
+		/*
+		 * Parse des dimensions avant tout pour correspondances
+		 */
+		resourceModel = new ResourceModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_RESOURCE_MODEL, VPIConstants.NAME_TREE_RESOURCESMODEL);
+		resourceModel.parseDatas();
+		
 		for(File file : filesDir.listFiles()) {
 			try {
 				switch(file.getName()) {
 				//Récupération des données par fichier
-					case VPIConstants.FILENAME_RESOURCE_MODEL:
+					/*case VPIConstants.FILENAME_RESOURCE_MODEL:
 						resourceModel = new ResourceModel(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESMODEL);
 						resourceModel.parseDatas();
-						break;
+						break;*/
 						
 					case VPIConstants.FILENAME_RESOURCES_FILTER:
 						resourceFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESFILTER);
@@ -123,6 +130,45 @@ public class VPIDatas {
 	    }
 
 	    return result;
+	}
+	
+	public void mergeParameter(FileDatas file, Entity entity, Parameters parameter, Parameters parameterToReplace) {	
+		this.getFileDatasFromThis(file).mergeParameter(entity, parameter, parameterToReplace);
+	}
+	
+	public void mergeEntity(FileDatas file, Entity entity, Entity entityToReplace) {
+		this.getFileDatasFromThis(file).mergeEntity(entity, entityToReplace);
+	}
+	
+	private FileDatas getFileDatasFromThis(FileDatas file){
+		switch(file.getFileName()) {
+		case VPIConstants.FILENAME_RESOURCE_MODEL:
+			return resourceModel;
+			
+		case VPIConstants.FILENAME_RESOURCES_FILTER:
+			return resourceFilter;
+			
+		case VPIConstants.FILENAME_EVENTS_FILTER:
+			return eventFilter;
+			
+		case VPIConstants.FILENAME_RESOURCES_EXPORT:
+			return exportResources;
+			
+		case VPIConstants.FILENAME_EVENTS_EXPORT:
+			return exportEvents;
+			
+		case VPIConstants.FILENAME_RESOURCES_IMPORT:
+			return importResources;
+			
+		case VPIConstants.FILENAME_EVENTS_IMPORT:
+			return importEvents;
+			
+		case VPIConstants.FILENAME_EVENTS_STRUCT:
+			return hierarchies;
+			
+		default:
+			return null;
+		}
 	}
 	
 	public String getName() {

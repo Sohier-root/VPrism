@@ -107,7 +107,7 @@ public class MainPage extends JFrame {
         top.add(browseBtn, BorderLayout.EAST);
         
         //Tree
-        VPITree tree = new VPITree();
+        VPITree tree = new VPITree(this.controller, isLeft);
         JScrollPane scroll = new JScrollPane(tree);
         
         // Bottom: execute button
@@ -126,6 +126,8 @@ public class MainPage extends JFrame {
         } else {
         	this.rightFileField = fileField;
             this.treeRight = tree;
+            this.treeRight.setOtherTree(this.treeLeft);
+            this.treeLeft.setOtherTree(this.treeRight);
             this.browseBtnRight = browseBtn;
             this.scrollPanelRight = scroll;
         }

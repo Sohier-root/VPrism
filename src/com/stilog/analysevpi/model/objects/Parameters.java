@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class Parameters {
+public class Parameters extends Mergeable{
 
 	private String name;
 	private String uid;
 	private List<Attribute> attributes = new ArrayList<>();
 	
-	boolean anomaly = false;
+	private boolean anomaly = false;
+	private boolean resolve = false;
 	
 	public Parameters(String name) {
 		this.name = name;
@@ -38,6 +39,18 @@ public class Parameters {
 
 	public void setAnomaly(boolean anomaly) {
 		this.anomaly = anomaly;
+	}
+
+	public boolean isResolve() {
+		return resolve;
+	}
+
+	public void setResolve(boolean resolve) {
+		this.resolve = resolve;
+		
+		for(Attribute attr : this.attributes) {
+			attr.setResolve(true);
+		}
 	}
 
 	public String getName() {
@@ -67,7 +80,7 @@ public class Parameters {
 	public void sort() {
 		attributes.sort(Comparator.comparing(Attribute::getKey));
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(name);

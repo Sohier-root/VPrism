@@ -22,7 +22,9 @@ import org.xml.sax.InputSource;
 
 import com.stilog.analysevpi.model.GeneralCorrespondance;
 import com.stilog.analysevpi.model.objects.Entity;
+import com.stilog.analysevpi.model.objects.Mergeable;
 import com.stilog.analysevpi.model.objects.Parameters;
+import com.stilog.analysevpi.utils.GUID;
 import com.stilog.analysevpi.utils.VPIConstants;
 
 public abstract class FileDatas {
@@ -91,7 +93,6 @@ public abstract class FileDatas {
 	            int id = Integer.parseInt(values[0]);
 	            String name = values[1].replace("\"", "");
 	            
-	            GeneralCorrespondance.getInstance().addresourceModel(values[0], name);
 	            String xml = decodeBase64(values[3].replace("\"", ""));
 	            
 	            Entity entity = new Entity(id, name);
@@ -101,12 +102,62 @@ public abstract class FileDatas {
 	        }
 	        
 	        for(Entity entity : this.entities) {
-	            entity.setParameters(this.parseXml(entity.getAssociatedXml()));
+	            entity.setParameters(this.parseXml(entity));
 	        }
 
 	    } catch (IOException e) {
 	        e.printStackTrace();
 	    }
+	}
+	
+	public void mergeParameter(Entity entity, Parameters parameter, Parameters parameterToReplace) {
+		Entity targetEntity = this.getEntity(entity.getName());
+		
+		parameter = (Parameters) makeUnique(parameter);
+		
+		if(parameterToReplace != null) {
+			targetEntity.removeParameter(parameterToReplace);
+		}
+		
+		parameter.setResolve(true);
+		targetEntity.addParameter(parameter);
+	}
+	
+	public void mergeEntity(Entity entity, Entity entityToReplace) {
+		entity = (Entity) makeUnique(entity);
+		if(entityToReplace != null) {
+			this.entities.remove(entityToReplace);
+		}
+		
+		entity.setResolve(true);
+		this.addEntity(entity);
+	}
+	
+	private Mergeable makeUnique(Mergeable obj) {
+		GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
+		
+		for(String uniqueAttr : obj.getUniqueAttributes().keySet()) {
+			String uniqueValue = obj.getUniqueAttribute(uniqueAttr);
+			//Si l'attribut unique existe deja, le rendre unique
+			if(!gCorr.getCorrespondance(uniqueAttr, uniqueValue).isBlank()){
+				//Gestion des différents type d'attribut unique 
+				switch(uniqueAttr) {
+				case VPIConstants.XML_TAG_ID:
+					int newValue = Integer.parseInt(uniqueValue);
+					while(!gCorr.getCorrespondance(uniqueAttr, String.valueOf(newValue)).isBlank()) {
+						newValue ++;
+					}
+					obj.addUniqueAttributes(uniqueAttr, String.valueOf(newValue));
+					break;
+				case VPIConstants.XML_TAG_UID:
+					String newGuid = GUID.makeGUID();
+					obj.addUniqueAttributes(uniqueAttr, newGuid);
+					break;
+				}
+			}
+		}
+		
+		return obj;
 	}
 	
 	public static String decodeBase64(String encoded) {
@@ -133,7 +184,7 @@ public abstract class FileDatas {
 		return null;
 	}
 	
-	protected abstract List<Parameters> parseXml(String xml);
+	protected abstract List<Parameters> parseXml(Entity entity);
 
 	public void sort() {
 		entities.sort(Comparator.comparing(Entity::getName));

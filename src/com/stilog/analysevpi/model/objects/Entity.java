@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class Entity {
+public class Entity extends Mergeable{
 
 	private int uid;
 	private String name;
 	List<Parameters> parameters = new ArrayList<>();
-	private String associatedXml;
 	
 	private boolean anomaly = false;
+	private boolean resolve = false;
 	
 	public Entity(int id, String name) {
 		this.uid = id;
@@ -29,6 +29,14 @@ public class Entity {
 		this.anomaly = anomaly;
 	}
 	
+	public boolean isResolve() {
+		return resolve;
+	}
+
+	public void setResolve(boolean resolve) {
+		this.resolve = resolve;
+	}
+
 	public void setParameters(List<Parameters> parameters) {
 		this.parameters = parameters;
 	}
@@ -51,13 +59,13 @@ public class Entity {
 		
 		return result;
 	}
-
-	public void setAssociatedXml(String associatedXml) {
-		this.associatedXml = associatedXml;
+	
+	public void addParameter(Parameters param) {
+		this.parameters.add(param);
 	}
-
-	public String getAssociatedXml() {
-		return associatedXml;
+	
+	public void removeParameter(Parameters param) {
+		this.parameters.remove(param);
 	}
 
 	public int getId() {

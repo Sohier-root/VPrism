@@ -11,7 +11,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.stilog.analysevpi.model.GeneralCorrespondance;
+import com.stilog.analysevpi.model.objects.Entity;
 import com.stilog.analysevpi.model.objects.Parameters;
+import com.stilog.analysevpi.utils.MethodUtil;
 import com.stilog.analysevpi.utils.VPIConstants;
 
 public class ResourceModel extends FileDatas{
@@ -26,18 +28,37 @@ public class ResourceModel extends FileDatas{
 	/*
 	 * PARSING METHODS
 	 */
-	protected List<Parameters> parseXml(String xml) {
+	protected List<Parameters> parseXml(Entity entity) {
 		
 		List<Parameters> paramList = new ArrayList<>();
-		Document doc = getDocument(xml);
+		Document doc = getDocument(entity.getAssociatedXml());
 		
 		Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
+		
+		/*
+		 * Ajout des attribut unique (id, uid ...)
+		 */
+		String id = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
+		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+		
+		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, id, entity.getName());
+		
+		/*
+		 * Récupération des attributs de la dimension
+		 */
 		paramList.addAll(computeHeadings(firstNodes.getElementsByTagName(VPIConstants.XML_TAG_HEADINGS).item(0)));
 		paramList.addAll(computeImportantHeadings(firstNodes));
 		
 		return paramList;
 	}
 	
+	/**
+	 * Recupère les attributs de la dimension
+	 * @param parentNode
+	 * @return
+	 */
 	private List<Parameters> computeHeadings(Node parentNode){
 		List<Parameters> headings = new ArrayList<>();
 		
@@ -60,21 +81,28 @@ public class ResourceModel extends FileDatas{
 			newParam.addAttributes(VPIConstants.PARAMETER_NAME, name);
 			newParam.addAttributes(VPIConstants.PARAMETER_TYPE, type);
 			
+			newParam.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
+			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, id, name);
+			newParam.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, uid, name);
+			
+			newParam.setAssociatedXml(MethodUtil.nodeToString(heading));
+			
 			//Si c'est un type resourceReference
 			NodeList resourceModel = attributesList.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODEL);
 			if(resourceModel != null && resourceModel.getLength() > 0) {
 				Element resourceModelParam = (Element) resourceModel.item(0).getChildNodes();
 				String idResourceModel = resourceModelParam.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
-				String resourceModelName = gCorr.getResourceModelName(idResourceModel);
+				String resourceModelName = gCorr.getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, idResourceModel);
 				newParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, resourceModelName!=null?resourceModelName:idResourceModel);
 				
 			}
 			
-			headings.add(newParam);
-			
 			//Ajout des correspondance de BDD (rub)
 			String column = attributesList.getElementsByTagName(VPIConstants.XML_TAG_COLUMNNAME).item(0).getTextContent();
-			GeneralCorrespondance.getInstance().addRub(column, name);
+			//GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_COLUMNNAME, column, name);
+			
+			headings.add(newParam);
 			
 			attributesCorr.put(id, name);
 			

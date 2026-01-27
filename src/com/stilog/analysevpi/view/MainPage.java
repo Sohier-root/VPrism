@@ -11,6 +11,7 @@ import org.kordamp.ikonli.swing.FontIcon;
 import com.stilog.analysevpi.controller.Controller;
 import com.stilog.analysevpi.model.objects.PositionFile;
 import com.stilog.analysevpi.utils.SystemInfo;
+import com.stilog.analysevpi.view.loading.LoadingIcon;
 import com.stilog.analysevpi.view.loading.LoadingWindow;
 import com.stilog.analysevpi.view.tree.VPITree;
 
@@ -22,6 +23,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Exemple d'interface Swing avec deux zones (gauche / droite). Chaque zone
@@ -64,6 +66,12 @@ public class MainPage extends JFrame {
 	private JToggleButton synchronizeBtn;
 	private JToggleButton diffOnlyBtn;
 	private JButton generateFilesBtn;
+	
+	/*
+	 * Icônes pour le bouton Generate Files
+	 */
+	private FontIcon generateFilesIconNormal;
+	private LoadingIcon generateFilesIconLoading;
 
 	public MainPage(Controller controller) {
 		super("VP Comparator");
@@ -219,11 +227,47 @@ public class MainPage extends JFrame {
 				return;
 			}
 			try {
+				// Désactiver le bouton generate et afficher l'icône de chargement
+				setGenerateFilesButtonLoading(true);
+				
 				treeRight.update(controller.handleFile(rightSelectedFile, PositionFile.RIGHT),
 						diffOnlyBtn.isSelected());
+				
+				// Récupérer le CompletableFuture pour savoir quand le dézipage est terminé
+				CompletableFuture<Boolean> unzipFuture = controller.getCompleteUnzipFuture(rightSelectedFile, PositionFile.RIGHT);
+				
+				// Quand le dézipage est terminé, réactiver le bouton
+				unzipFuture.thenAccept(success -> {
+					SwingUtilities.invokeLater(() -> {
+						setGenerateFilesButtonLoading(false);
+						if (!success) {
+							System.err.println("Erreur lors du dézipage complet");
+						}
+					});
+				});
+				
 			} catch (Exception ex) {
 				ex.printStackTrace();
+				setGenerateFilesButtonLoading(false);
 			}
+		}
+	}
+
+	/**
+	 * Active ou désactive le mode chargement du bouton Generate Files
+	 * @param loading true pour afficher le chargement, false pour l'icône normale
+	 */
+	private void setGenerateFilesButtonLoading(boolean loading) {
+		if (loading) {
+			// Désactiver le bouton et afficher l'icône de chargement
+			generateFilesBtn.setEnabled(false);
+			generateFilesBtn.setIcon(generateFilesIconLoading);
+			generateFilesIconLoading.start(generateFilesBtn);
+		} else {
+			// Réactiver le bouton et afficher l'icône normale
+			generateFilesIconLoading.stop();
+			generateFilesBtn.setIcon(generateFilesIconNormal);
+			generateFilesBtn.setEnabled(true);
 		}
 	}
 
@@ -249,7 +293,10 @@ public class MainPage extends JFrame {
 		/*
 		 * Boutton Generate Files
 		 */
-		this.generateFilesBtn = new JButton(FontIcon.of(MaterialDesign.MDI_FILE_CHECK, 20));
+		this.generateFilesIconNormal = FontIcon.of(MaterialDesign.MDI_FILE_CHECK, 20);
+		this.generateFilesIconLoading = new LoadingIcon();
+		this.generateFilesBtn = new JButton(generateFilesIconNormal);
+		this.generateFilesBtn.setEnabled(false); // Désactivé par défaut
 
 		/*
 		 * ToolTip
@@ -352,8 +399,20 @@ public class MainPage extends JFrame {
 		this.generateFilesBtn.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				controller.performGenerateVPI();
+				// Vérifier que le bouton est activé
+				if (generateFilesBtn.isEnabled()) {
+					controller.performGenerateVPI();
 				}
+			}
 		});
+	}
+	
+	@Override
+	public void dispose() {
+		// Arrêter l'animation si elle est en cours
+		if (generateFilesIconLoading != null) {
+			generateFilesIconLoading.stop();
+		}
+		super.dispose();
 	}
 }

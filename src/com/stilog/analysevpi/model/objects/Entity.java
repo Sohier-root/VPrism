@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.stilog.analysevpi.utils.MethodUtil;
+
 public class Entity extends Mergeable{
 
 	private int uid;
@@ -91,6 +93,24 @@ public class Entity extends Mergeable{
 			builder.append(param.toString() + System.lineSeparator());
 		return builder.toString();
 	}*/
+	
+	public String generateXml() {
+		for(Parameters param : this.parameters) {
+			if(param.getInitialXml() == null)
+				continue;
+			//Si le paramètre a été ajouté 
+			if(param.isAdded()) {
+				String concatXml = param.getParentTag() + System.lineSeparator() + param.getAssociatedXml();
+				this.setAssociatedXml(this.getAssociatedXml().replace(param.getParentTag(), concatXml));
+			}
+			//Sinon, le paramètre a été remplacé
+			else {
+				this.setAssociatedXml(this.getAssociatedXml().replace(param.getInitialXml(), param.getAssociatedXml()));
+			}
+		}
+		
+		return MethodUtil.encodeBase64(this.getAssociatedXml());
+	}
 	
 	public void sort() {
 		parameters.sort(Comparator.comparing(Parameters::getName));

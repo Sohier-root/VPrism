@@ -23,8 +23,9 @@ public class ImportExport extends FileDatas{
 	}
 	
 	/*
-	 * PARSING METHODS
+	 * PARSE XML
 	 */
+	@Override
 	protected List<Parameters> parseXml(Entity entity) {
 		
 		List<Parameters> paramList = new ArrayList<>();
@@ -39,6 +40,8 @@ public class ImportExport extends FileDatas{
 		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
 		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
 		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+		entity.setMergeable(true);
+		entity.setReplaceable(true);
 		
 		/*
 		 * Recupération de la configuration
@@ -82,7 +85,8 @@ public class ImportExport extends FileDatas{
 				else if(!sourceAttribute.hasAttribute("isNull"))
 					value = sourceAttribute.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent();
 			}
-			
+			param.setReplaceable(true);
+			param.setEditableName(false);
 			param.addAttributes(name, value);
 		}
 		return param;
@@ -107,6 +111,8 @@ public class ImportExport extends FileDatas{
 			
 			param.addAttributes(paramSource.getNodeName(), paramSource.getTextContent());
 		}
+		param.setReplaceable(true);
+		param.setEditableName(false);
 		paramList.add(param);
 		
 		return paramList;

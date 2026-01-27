@@ -18,6 +18,9 @@ public class Filter extends FileDatas{
 		super(filePath, name);
 	}
 
+	/*
+	 * PARSE XML
+	 */
 	@Override
 	protected List<Parameters> parseXml(Entity entity) {
 		
@@ -33,6 +36,8 @@ public class Filter extends FileDatas{
 			String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
 			entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
 			entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+			entity.setReplaceable(true);
+			entity.setMergeable(true);
 			
 			/*
 			 * Recupération des conditions du filtre
@@ -40,6 +45,7 @@ public class Filter extends FileDatas{
 			String name = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_NAME).item(0).getTextContent();
 			Node conditonsNode = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_FILTERCONDITION).item(0);
 			Parameters newParam = new Parameters(name);
+			newParam.setReplaceable(true);
 			newParam.addAttributes(VPIConstants.PARAMETER_CONDITIONS, MethodUtil.nodeToString(conditonsNode));
 			
 			paramList.add(newParam);

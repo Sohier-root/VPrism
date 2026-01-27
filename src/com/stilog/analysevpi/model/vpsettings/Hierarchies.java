@@ -20,9 +20,15 @@ public class Hierarchies extends FileDatas {
 		super(filePath, name);
 	}
 
+	/*
+	 * PARSE XML
+	 */
 	@Override
 	protected List<Parameters> parseXml(Entity entity) {
 		List<Parameters> paramList = new ArrayList<>();
+		
+		entity.setMergeable(true);
+		entity.setReplaceable(true);
 		
 		Document doc = getDocument(entity.getAssociatedXml());
 		Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
@@ -60,9 +66,11 @@ public class Hierarchies extends FileDatas {
 			String resourceName = GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, resourceId);
 			String mandatory = resource.getElementsByTagName(VPIConstants.XML_TAG_MANDATORY).item(0).getTextContent();
 			
-			Parameters param = new Parameters(resourceName);
+			Parameters param = new Parameters(resourceName, MethodUtil.nodeToString(resource));
 			param.addAttributes(VPIConstants.PARAMETER_CONDITIONS, computeConditions(resource.getElementsByTagName(VPIConstants.XML_TAG_FILTER).item(0)));
 			param.addAttributes(VPIConstants.PARAMETER_MANDATORY, mandatory);
+			param.setMergeable(true);
+			param.setReplaceable(true);
 			paramList.add(param);
 		}
 		

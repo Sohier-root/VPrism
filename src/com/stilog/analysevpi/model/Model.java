@@ -11,7 +11,7 @@ public class Model {
 	private VPIDatas droite = new VPIDatas();
 	
 	public void processFile(File file, PositionFile position) {
-		getData(position).computeDatas(file);
+		getData(position).computeDatas(file, position);
 	}
 	
 	/*

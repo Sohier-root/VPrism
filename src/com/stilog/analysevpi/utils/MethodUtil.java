@@ -1,9 +1,11 @@
 package com.stilog.analysevpi.utils;
 
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -37,5 +39,26 @@ public class MethodUtil {
 			e.printStackTrace();
 		}
 		return writer.toString().trim();
+	}
+	
+	public static String decodeBase64(String encoded) {
+	    try {
+	        byte[] decodedBytes = Base64.getDecoder().decode(encoded);
+	        return new String(decodedBytes, StandardCharsets.UTF_8);
+	    } catch (IllegalArgumentException e) {
+	    	e.printStackTrace();
+	        return null; // ou throw new RuntimeException("Base64 invalide");
+	    }
+	}
+	
+	public static String encodeBase64(String decoded) {
+	    try {
+	    	byte[] decodedBytes = decoded.getBytes();
+	    	byte[] encoded = Base64.getEncoder().encode(decodedBytes);
+	        return new String(encoded, StandardCharsets.UTF_8);
+	    } catch (IllegalArgumentException e) {
+	    	e.printStackTrace();
+	        return null; // ou throw new RuntimeException("Base64 invalide");
+	    }
 	}
 }

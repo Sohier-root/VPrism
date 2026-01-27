@@ -15,6 +15,10 @@ import com.stilog.analysevpi.utils.VPIConstants;
 
 public class VPIDatas {
 
+	private static final String OUTPUT_DIR = System.getProperty("java.io.tmpdir") + "vpcompare/";
+	private static final String OUTPUT_DIR_TESTED = OUTPUT_DIR + "tested/";
+	private static final String OUTPUT_DIR_REF = OUTPUT_DIR + "ref/";
+	private static final String OUTPUT_DIR_MERGED = OUTPUT_DIR + "merged/";
 	String name;
 	String fileName;
 	String filePath;
@@ -43,7 +47,7 @@ public class VPIDatas {
 	/*
 	 * METHODS
 	 */
-	public void computeDatas(File vpi) {
+	public void computeDatas(File vpi, PositionFile position) {
 		
 		this.name = "VPI Datas";
 		this.fileName = vpi.getName();
@@ -51,7 +55,7 @@ public class VPIDatas {
 		this.lenght = vpi.length();
 		
 		String vpiPath = vpi.getAbsolutePath();
-		String outputDir = "tmp/dezipVPI/";
+		String outputDir = position == PositionFile.LEFT ? OUTPUT_DIR_REF : OUTPUT_DIR_TESTED;
 		Decompressor.dezipper(vpiPath, outputDir);
 		
 		File filesDir = new File(outputDir);
@@ -114,7 +118,21 @@ public class VPIDatas {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void generateMergedFiles() {
+		File outputDirFile = new File(OUTPUT_DIR_MERGED);
+		outputDirFile.mkdir();
 		
+		try {
+			List<Field> refFiles = this.getFilesDatas();
+			for(int i = 0; i<refFiles.size(); i++) {
+				((FileDatas) refFiles.get(i).get(this)).generateFile(OUTPUT_DIR_MERGED);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public List<Field> getFilesDatas() {
@@ -132,11 +150,11 @@ public class VPIDatas {
 	    return result;
 	}
 	
-	public void mergeParameter(FileDatas file, Entity entity, Parameters parameter, Parameters parameterToReplace) {	
+	public void mergeParameter(FileDatas file, Entity entity, Parameters parameter, Parameters parameterToReplace) throws Exception {	
 		this.getFileDatasFromThis(file).mergeParameter(entity, parameter, parameterToReplace);
 	}
 	
-	public void mergeEntity(FileDatas file, Entity entity, Entity entityToReplace) {
+	public void mergeEntity(FileDatas file, Entity entity, Entity entityToReplace) throws Exception {
 		this.getFileDatasFromThis(file).mergeEntity(entity, entityToReplace);
 	}
 	

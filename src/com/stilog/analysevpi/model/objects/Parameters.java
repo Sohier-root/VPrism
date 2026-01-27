@@ -21,6 +21,12 @@ public class Parameters extends Mergeable{
 		this.name = name;
 	}
 	
+	public Parameters(String name, String xml) {
+		this.name = name;
+		this.setInitialXml(xml);
+		this.setAssociatedXml(xml);
+	}
+	
 	/*
 	 * GETTER & SETTER
 	 */
@@ -102,7 +108,7 @@ public class Parameters extends Mergeable{
 		String sep = System.lineSeparator();
 		StringBuilder builder = new StringBuilder();
 		builder.append("\t- Name : " + this.name + sep);
-		builder.append("\tAttributes : " + this.attributes + sep);
+		builder.append("\t- xml : " + this.getAssociatedXml() + sep);
 		
 		return builder.toString();
 	}

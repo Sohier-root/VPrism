@@ -26,9 +26,13 @@ public class ResourceModel extends FileDatas{
 	}
 	
 	/*
-	 * PARSING METHODS
+	 * PARSE XML
 	 */
+	@Override
 	protected List<Parameters> parseXml(Entity entity) {
+		//Les Dimensions sont ajoutable et remplacable
+		entity.setMergeable(true);
+		entity.setReplaceable(true);
 		
 		List<Parameters> paramList = new ArrayList<>();
 		Document doc = getDocument(entity.getAssociatedXml());
@@ -48,7 +52,7 @@ public class ResourceModel extends FileDatas{
 		/*
 		 * Récupération des attributs de la dimension
 		 */
-		paramList.addAll(computeHeadings(firstNodes.getElementsByTagName(VPIConstants.XML_TAG_HEADINGS).item(0)));
+		paramList.addAll(computeHeadings(firstNodes.getElementsByTagName(VPIConstants.XML_TAG_HEADINGS).item(0), entity));
 		paramList.addAll(computeImportantHeadings(firstNodes));
 		
 		return paramList;
@@ -59,7 +63,7 @@ public class ResourceModel extends FileDatas{
 	 * @param parentNode
 	 * @return
 	 */
-	private List<Parameters> computeHeadings(Node parentNode){
+	private List<Parameters> computeHeadings(Node parentNode, Entity entity){
 		List<Parameters> headings = new ArrayList<>();
 		
 		NodeList headingsList = parentNode.getChildNodes();
@@ -77,6 +81,9 @@ public class ResourceModel extends FileDatas{
 			String type = ((Element)attributesList.getElementsByTagName(VPIConstants.XML_TAG_TYPE).item(0)).getAttribute("class");
 			
 			Parameters newParam = new Parameters(name);
+			newParam.setMergeable(true);
+			newParam.setReplaceable(true);
+			newParam.setParentTag(parentNode.getNodeName());
 			newParam.setUid(uid);
 			newParam.addAttributes(VPIConstants.PARAMETER_NAME, name);
 			newParam.addAttributes(VPIConstants.PARAMETER_TYPE, type);
@@ -86,6 +93,7 @@ public class ResourceModel extends FileDatas{
 			newParam.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
 			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, uid, name);
 			
+			newParam.setInitialXml(MethodUtil.nodeToString(heading));
 			newParam.setAssociatedXml(MethodUtil.nodeToString(heading));
 			
 			//Si c'est un type resourceReference
@@ -94,6 +102,7 @@ public class ResourceModel extends FileDatas{
 				Element resourceModelParam = (Element) resourceModel.item(0).getChildNodes();
 				String idResourceModel = resourceModelParam.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
 				String resourceModelName = gCorr.getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, idResourceModel);
+				entity.addResourceModelAttributes(idResourceModel); //Ajout de l'id de la dimension pour correspondances
 				newParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, resourceModelName!=null?resourceModelName:idResourceModel);
 				
 			}
@@ -124,7 +133,9 @@ public class ResourceModel extends FileDatas{
 		NodeList mandatoryList = ((Element) mandatoryNode.getChildNodes()).getElementsByTagName(VPIConstants.XML_TAG_ENTITYID);
 		
 		//KEY
-		Parameters keyParam = new Parameters(VPIConstants.PARAMETER_KEY);
+		Parameters keyParam = new Parameters(VPIConstants.PARAMETER_KEY, MethodUtil.nodeToString(keyNode));
+		keyParam.setReplaceable(true);
+		keyParam.setEditableName(false);
 		for(int i = 0; i<keyList.getLength(); i++) {
 			Node key = keyList.item(i);
 			String idAttribute =  key.getTextContent();
@@ -133,7 +144,9 @@ public class ResourceModel extends FileDatas{
 		}
 		
 		//KEY HEADINGS
-		Parameters keyHeadingsParam = new Parameters(VPIConstants.PARAMETER_KEYHEADINGS);
+		Parameters keyHeadingsParam = new Parameters(VPIConstants.PARAMETER_KEYHEADINGS, MethodUtil.nodeToString(keyHeadingsNode));
+		keyHeadingsParam.setReplaceable(true);
+		keyHeadingsParam.setEditableName(false);
 		for(int i = 0; i<keyHeadingsList.getLength(); i++) {
 			Node key = keyHeadingsList.item(i);
 			String idAttribute =  key.getTextContent();
@@ -142,7 +155,9 @@ public class ResourceModel extends FileDatas{
 		}
 		
 		//LABEL HEADINGS
-		Parameters labelsHeadingsParam = new Parameters(VPIConstants.PARAMETER_LABELSHEADINGS);
+		Parameters labelsHeadingsParam = new Parameters(VPIConstants.PARAMETER_LABELSHEADINGS, MethodUtil.nodeToString(labelsHeadingsNode));
+		labelsHeadingsParam.setReplaceable(true);
+		labelsHeadingsParam.setEditableName(false);
 		for(int i = 0; i<labelsHeadingsList.getLength(); i++) {
 			Node key = labelsHeadingsList.item(i);
 			String idAttribute = key.getTextContent();
@@ -150,8 +165,10 @@ public class ResourceModel extends FileDatas{
 					attributesCorr.containsKey(idAttribute)?attributesCorr.get(idAttribute):idAttribute);
 		}
 		
-		//LABEL HEADINGS
-		Parameters mandatoryParam = new Parameters(VPIConstants.PARAMETER_MANDATORY);
+		//MANDATORY
+		Parameters mandatoryParam = new Parameters(VPIConstants.PARAMETER_MANDATORY, MethodUtil.nodeToString(mandatoryNode));
+		mandatoryParam.setReplaceable(true);
+		mandatoryParam.setEditableName(false);
 		for(int i = 0; i<mandatoryList.getLength(); i++) {
 			Node key = mandatoryList.item(i);
 			String idAttribute =  key.getTextContent();
@@ -167,14 +184,5 @@ public class ResourceModel extends FileDatas{
 		return importantHeadings;
 	}
 
-
-
-	/*
-	 * METHODS
-	 */
-	/*@Override
-	public String toString() {
-		return "ResourceModel [entities=" + entities + "]";
-	}*/
 	
 }

@@ -3,8 +3,10 @@ package com.stilog.analysevpi.model.vpsettings;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -25,9 +27,13 @@ import com.stilog.analysevpi.model.objects.Entity;
 import com.stilog.analysevpi.model.objects.Mergeable;
 import com.stilog.analysevpi.model.objects.Parameters;
 import com.stilog.analysevpi.utils.GUID;
+import com.stilog.analysevpi.utils.MethodUtil;
 import com.stilog.analysevpi.utils.VPIConstants;
 
 public abstract class FileDatas {
+	
+	private static final String SEPARATOR = ";";
+	private static final String LINE_SEPARATOR = System.lineSeparator();
 	
 	String name;
 	File file;
@@ -85,17 +91,17 @@ public abstract class FileDatas {
 	 */
 	public void parseDatas() {
 		String line = "";
-	    String separator = ";"; // ou ; selon ton csv
 
 	    try (BufferedReader br = new BufferedReader(new FileReader(file.getAbsolutePath()))) {
 	        while ((line = br.readLine()) != null) {
-	            String[] values = line.split(separator);
+	            String[] values = line.split(SEPARATOR);
 	            int id = Integer.parseInt(values[0]);
 	            String name = values[1].replace("\"", "");
 	            
-	            String xml = decodeBase64(values[3].replace("\"", ""));
+	            String xml = MethodUtil.decodeBase64(values[3].replace("\"", ""));
 	            
 	            Entity entity = new Entity(id, name);
+	            entity.setInitialXml(xml);
 	            entity.setAssociatedXml(xml);
 	            
 	            this.addEntity(entity);
@@ -110,23 +116,34 @@ public abstract class FileDatas {
 	    }
 	}
 	
-	public void mergeParameter(Entity entity, Parameters parameter, Parameters parameterToReplace) {
+	public void mergeParameter(Entity entity, Parameters parameter, Parameters parameterToReplace) throws Exception  {
 		Entity targetEntity = this.getEntity(entity.getName());
 		
-		parameter = (Parameters) makeUnique(parameter);
-		
 		if(parameterToReplace != null) {
+			if(!parameterToReplace.isEditableName() && !parameter.getName().equals(parameterToReplace.getName()))
+				throw new Exception("Le nom doit être identique pour remplacer ces données!");
+			parameter.setUniqueAttributes(parameterToReplace.getUniqueAttributes());
+			parameter.setInitialXml(parameterToReplace.getInitialXml());
 			targetEntity.removeParameter(parameterToReplace);
+		}
+		else {
+			parameter = (Parameters) makeUnique(parameter);
 		}
 		
 		parameter.setResolve(true);
 		targetEntity.addParameter(parameter);
 	}
 	
-	public void mergeEntity(Entity entity, Entity entityToReplace) {
-		entity = (Entity) makeUnique(entity);
+	public void mergeEntity(Entity entity, Entity entityToReplace) throws Exception {
+		
 		if(entityToReplace != null) {
+			if(!entityToReplace.isEditableName() && !entity.getName().equals(entityToReplace.getName()))
+				throw new Exception("Le nom doit être identique pour remplacer ces données!");
+			entity.setUniqueAttributes(entityToReplace.getUniqueAttributes());
 			this.entities.remove(entityToReplace);
+		}
+		else {
+			entity = (Entity) makeUnique(entity);
 		}
 		
 		entity.setResolve(true);
@@ -157,18 +174,10 @@ public abstract class FileDatas {
 			}
 		}
 		
+		obj.setAdded(true);
 		return obj;
 	}
-	
-	public static String decodeBase64(String encoded) {
-	    try {
-	        byte[] decodedBytes = Base64.getDecoder().decode(encoded);
-	        return new String(decodedBytes, StandardCharsets.UTF_8);
-	    } catch (IllegalArgumentException e) {
-	    	e.printStackTrace();
-	        return null; // ou throw new RuntimeException("Base64 invalide");
-	    }
-	}
+
 	
 	protected Document getDocument(String xml) {
 		try {
@@ -185,6 +194,25 @@ public abstract class FileDatas {
 	}
 	
 	protected abstract List<Parameters> parseXml(Entity entity);
+	
+	/*
+	 * Regénère le fichier avec les modification potentielle
+	 */
+	public void generateFile(String outputDir) {
+		try {
+			File newFile = new File(outputDir, this.getFileName());
+			newFile.createNewFile();
+			FileWriter writer = new FileWriter(newFile, Charset.forName("UTF-8"));
+			for(Entity ent :  this.entities) {
+				String xmlEncode = ent.generateXml();
+				writer.append(ent.getId() + SEPARATOR + ent.getName() + SEPARATOR + xmlEncode + LINE_SEPARATOR);
+			}
+			writer.close();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	public void sort() {
 		entities.sort(Comparator.comparing(Entity::getName));

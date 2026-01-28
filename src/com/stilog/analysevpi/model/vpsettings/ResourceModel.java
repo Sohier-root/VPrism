@@ -47,7 +47,9 @@ public class ResourceModel extends FileDatas{
 		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
 		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
 		
-		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, id, entity.getName());
+		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, id, entity.getName());
+		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, uid, entity.getName());
+		
 		
 		/*
 		 * Récupération des attributs de la dimension

@@ -34,6 +34,7 @@ public abstract class FileDatas {
 	
 	private static final String SEPARATOR = ";";
 	private static final String LINE_SEPARATOR = System.lineSeparator();
+	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 	
 	String name;
 	File file;
@@ -99,10 +100,12 @@ public abstract class FileDatas {
 	            String name = values[1].replace("\"", "");
 	            
 	            String xml = MethodUtil.decodeBase64(values[3].replace("\"", ""));
+	            Document doc = getDocument(xml);
+	            String xmlFormat = XML_HEADER + LINE_SEPARATOR + MethodUtil.nodeToString(doc);
 	            
 	            Entity entity = new Entity(id, name);
-	            entity.setInitialXml(xml);
-	            entity.setAssociatedXml(xml);
+	            entity.setInitialXml(xmlFormat);
+	            entity.setAssociatedXml(xmlFormat);
 	            
 	            this.addEntity(entity);
 	        }
@@ -204,8 +207,9 @@ public abstract class FileDatas {
 			newFile.createNewFile();
 			FileWriter writer = new FileWriter(newFile, Charset.forName("UTF-8"));
 			for(Entity ent :  this.entities) {
-				String xmlEncode = ent.generateXml();
-				writer.append(ent.getId() + SEPARATOR + ent.getName() + SEPARATOR + xmlEncode + LINE_SEPARATOR);
+				String xmlEncode = "\"" + ent.generateXml() + "\"";
+				String name = "\"" + ent.getName() + "\"";
+				writer.append(ent.getId() + SEPARATOR + name + SEPARATOR + "0" + SEPARATOR +  xmlEncode + LINE_SEPARATOR);
 			}
 			writer.close();
 		}

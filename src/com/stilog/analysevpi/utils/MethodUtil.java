@@ -32,7 +32,8 @@ public class MethodUtil {
 
 			// Options de formatage (facultatif)
 			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			transformer.setOutputProperty(OutputKeys.INDENT, "no");
+			//transformer.setOutputProperty(OutputKeys.METHOD, "html");
 
 			transformer.transform(new DOMSource(node), new StreamResult(writer));
 		} catch (Exception e) {

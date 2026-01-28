@@ -188,7 +188,7 @@ public class MainPage extends JFrame {
 		return topPanel;
 	}
 
-	private void chooseVPIFile(boolean isLeft) {
+	private void chooseVPIFile(Boolean isLeft) {
 		JFileChooser chooser = new JFileChooser();
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		// Optional: set filters
@@ -205,6 +205,18 @@ public class MainPage extends JFrame {
 				rightFileField.setText(f.getAbsolutePath());
 			}
 		}
+	}
+	
+	private String chooseVPIFolder() {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		chooser.setDialogTitle("Dossier cible");
+		int res = chooser.showOpenDialog(this);
+		if (res == JFileChooser.APPROVE_OPTION) {
+			File f = chooser.getSelectedFile();
+			return f.getAbsolutePath();
+		}
+		return null;
 	}
 
 	public void processFile(boolean isLeft) {
@@ -330,10 +342,6 @@ public class MainPage extends JFrame {
 		AdjustmentListener listenerScrollRight = createScrollListener(scrollLeft);
 
 		// Synchroniser par défault
-		treeLeft.addTreeExpansionListener(listenerTreeLeft);
-		treeRight.addTreeExpansionListener(listenerTreeRight);
-		scrollLeft.addAdjustmentListener(listenerScrollLeft);
-		scrollRight.addAdjustmentListener(listenerScrollRight);
 		this.synchronizeBtn.setSelected(true);
 		enableSynchronization(listenerTreeLeft, listenerTreeRight, listenerScrollLeft, listenerScrollRight);
 
@@ -382,7 +390,15 @@ public class MainPage extends JFrame {
 	}
 
 	private void initializeDiffOnlyToggle() {
-		this.diffOnlyBtn.addMouseListener(new MouseAdapter() {
+		this.diffOnlyBtn.addItemListener(e -> {
+	        if (e.getStateChange() == ItemEvent.SELECTED) {
+	        	diffOnlyBtn.setSelected(true);
+	        } else {
+	        	diffOnlyBtn.setSelected(false);
+	        }
+	        treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
+		});
+		/*this.diffOnlyBtn.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				// Toggle l'état
@@ -392,17 +408,17 @@ public class MainPage extends JFrame {
 				treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
 				//treeRight.update(controller.getVPIData(PositionFile.RIGHT), diffOnlyBtn.isSelected());
 			}
-		});
+		});*/
 	}
 
 	private void initializeGenerateFiles() {
-		this.generateFilesBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				// Vérifier que le bouton est activé
-				if (generateFilesBtn.isEnabled()) {
-					controller.performGenerateVPI();
-				}
+		this.generateFilesBtn.addActionListener(e -> {
+			String outputPath = chooseVPIFolder();
+			// Vérifier que le bouton est activé
+			if (generateFilesBtn.isEnabled() && outputPath != null) {
+				LoadingWindow.run(this, () -> {
+					controller.performGenerateVPI(outputPath);
+				});
 			}
 		});
 	}

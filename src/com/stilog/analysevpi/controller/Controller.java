@@ -44,7 +44,7 @@ public class Controller {
 			vpiPath, 
 			outputDir,
 			// Callback de progression (optionnel)
-			fileName -> System.out.println("Extraction en cours : " + fileName),
+			fileName -> {},
 			// Callback de complétion
 			() -> System.out.println("Décompression complète terminée pour : " + file.getName()),
 			// Callback d'erreur
@@ -137,7 +137,7 @@ public class Controller {
 		return rightDatas;
 	}
 
-	public void performGenerateVPI() {
-		this.model.getData(PositionFile.RIGHT).generateMergedFiles();
+	public void performGenerateVPI(String outputPath) {
+		this.model.getData(PositionFile.RIGHT).generateMergedFiles(outputPath);
 	}
 }

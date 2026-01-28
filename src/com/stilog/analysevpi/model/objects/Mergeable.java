@@ -37,11 +37,11 @@ public abstract class Mergeable {
 	}
 
 	public void addUniqueAttributes(String key, String value) {
-		if(this.uniqueAttributes.containsKey(key)) {
+		/*if(this.uniqueAttributes.containsKey(key)) {
 			String oldXml = "<" + key + ">" + this.uniqueAttributes.get(key) + "</" + key + ">";
 			String newXml = "<" + key + ">" + value + "</" + key + ">";
 			this.associatedXml = this.associatedXml.replace(oldXml, newXml);
-		}
+		}*/
 		
 		this.uniqueAttributes.put(key, value);
 	}

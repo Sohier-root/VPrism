@@ -5,10 +5,11 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.stilog.analysevpi.utils.MethodUtil;
+import com.stilog.analysevpi.utils.VPIConstants;
 
 public class Entity extends Mergeable{
 
-	private int uid;
+	private int id;
 	private String name;
 	List<Parameters> parameters = new ArrayList<>();
 	
@@ -16,7 +17,7 @@ public class Entity extends Mergeable{
 	private boolean resolve = false;
 	
 	public Entity(int id, String name) {
-		this.uid = id;
+		this.id = id;
 		this.name = name;
 	}
 	
@@ -71,7 +72,11 @@ public class Entity extends Mergeable{
 	}
 
 	public int getId() {
-		return uid;
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public String getName() {
@@ -95,6 +100,14 @@ public class Entity extends Mergeable{
 	}*/
 	
 	public String generateXml() {
+		for(String key : this.getUniqueAttributes().keySet()) {
+			String tagToReplace = "<" + key + ">*</" + key + ">";
+			String newTag = "<" + key + ">" + this.getUniqueAttribute(key) + "</" + key + ">";
+			this.setAssociatedXml(this.getAssociatedXml().replaceFirst(tagToReplace, newTag));
+			if(key.equals(VPIConstants.XML_TAG_ID))
+				this.setId(Integer.parseInt(this.getUniqueAttribute(key)));
+		}
+		
 		for(Parameters param : this.parameters) {
 			if(param.getInitialXml() == null)
 				continue;

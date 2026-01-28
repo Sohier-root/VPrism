@@ -82,7 +82,7 @@ public class AsyncDecompressor {
         byte[] buffer = new byte[8192]; // Buffer plus grand pour meilleures performances
         
         File destDir = new File(dossierDestination);
-        if (!destDir.exists()) {
+        if (destDir.exists()) {
             destDir.mkdirs();
         }
         
@@ -130,6 +130,7 @@ public class AsyncDecompressor {
             }
             
             System.out.println("Décompression complète terminée : " + fileCount + " fichiers extraits");
+            System.out.println("Path : " + dossierDestination);
         }
     }
     

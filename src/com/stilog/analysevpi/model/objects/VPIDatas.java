@@ -1,7 +1,11 @@
 package com.stilog.analysevpi.model.objects;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +14,7 @@ import com.stilog.analysevpi.model.vpsettings.Filter;
 import com.stilog.analysevpi.model.vpsettings.Hierarchies;
 import com.stilog.analysevpi.model.vpsettings.ImportExport;
 import com.stilog.analysevpi.model.vpsettings.ResourceModel;
+import com.stilog.analysevpi.utils.Compressor;
 import com.stilog.analysevpi.utils.Decompressor;
 import com.stilog.analysevpi.utils.VPIConstants;
 
@@ -120,8 +125,10 @@ public class VPIDatas {
 		}
 	}
 	
-	public void generateMergedFiles() {
+	public void generateMergedFiles(String outputPathVpi) {
 		File outputDirFile = new File(OUTPUT_DIR_MERGED);
+		if(outputDirFile.exists())
+			outputDirFile.delete();
 		outputDirFile.mkdir();
 		
 		try {
@@ -129,6 +136,17 @@ public class VPIDatas {
 			for(int i = 0; i<refFiles.size(); i++) {
 				((FileDatas) refFiles.get(i).get(this)).generateFile(OUTPUT_DIR_MERGED);
 			}
+			
+			File vpiFileDir = new File(OUTPUT_DIR_TESTED);
+			for(File vpiFile : vpiFileDir.listFiles()) {
+				File mergedFile = new File(OUTPUT_DIR_MERGED + vpiFile.getName());
+				if(!mergedFile.exists()) {
+					Files.copy(Path.of(vpiFile.toURI()), new FileOutputStream(mergedFile));
+				}
+			}
+			
+			File destFile = new File(outputPathVpi + "\\" + this.fileName.replace(".vpi", "_merged.vpi").replace(".vps", "_merged.vps"));
+			Compressor.zip(outputDirFile, destFile);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

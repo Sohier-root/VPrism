@@ -229,8 +229,8 @@ public class MainPage extends JFrame {
 			// Appel vers fonction de traitement
 			try {
 				treeLeft.update(controller.handleFile(leftSelectedFile, PositionFile.LEFT), diffOnlyBtn.isSelected());
-			} catch (Exception ex) {
-				ex.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		} else {
 			if (rightSelectedFile == null) {

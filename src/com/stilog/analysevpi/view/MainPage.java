@@ -11,6 +11,7 @@ import org.kordamp.ikonli.swing.FontIcon;
 import com.stilog.analysevpi.controller.Controller;
 import com.stilog.analysevpi.model.objects.PositionFile;
 import com.stilog.analysevpi.utils.SystemInfo;
+import com.stilog.analysevpi.view.documentation.DocumentationWindow;
 import com.stilog.analysevpi.view.loading.LoadingIcon;
 import com.stilog.analysevpi.view.loading.LoadingWindow;
 import com.stilog.analysevpi.view.tree.VPITree;
@@ -66,6 +67,7 @@ public class MainPage extends JFrame {
 	private JToggleButton synchronizeBtn;
 	private JToggleButton diffOnlyBtn;
 	private JButton generateFilesBtn;
+	private JButton helpBtn;
 	
 	/*
 	 * Icônes pour le bouton Generate Files
@@ -292,6 +294,13 @@ public class MainPage extends JFrame {
 		toolbar.setFloatable(false); // Pour éviter le détachement moche
 		toolbar.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
+	    /*
+	     * Bouton Help (tout à gauche)
+	     */
+	    this.helpBtn = new JButton(FontIcon.of(MaterialDesign.MDI_HELP_CIRCLE, 20));
+	    this.helpBtn.setToolTipText("Aide et documentation");
+	    this.helpBtn.addActionListener(e -> openDocumentation());
+	    
 		/*
 		 * Boutton Synchro
 		 */
@@ -320,6 +329,8 @@ public class MainPage extends JFrame {
 		/*
 		 * Ajout a la toolbar
 		 */
+		toolbar.add(helpBtn, BorderLayout.WEST);
+		toolbar.addSeparator();
 		toolbar.add(diffOnlyBtn, BorderLayout.CENTER);
 		toolbar.add(synchronizeBtn, BorderLayout.CENTER);
 		toolbar.add(generateFilesBtn, BorderLayout.CENTER);
@@ -421,6 +432,14 @@ public class MainPage extends JFrame {
 				});
 			}
 		});
+	}
+	
+	/**
+	 * Ouvre la fenêtre de documentation
+	 */
+	private void openDocumentation() {
+	    DocumentationWindow docWindow = new DocumentationWindow();
+	    docWindow.setVisible(true);
 	}
 	
 	@Override

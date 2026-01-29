@@ -21,6 +21,11 @@ public class Decompressor {
 
             ZipEntry entree;
 
+            File destDir = new File(dossierDestination);
+            if (destDir.exists()) {
+            	destDir.delete();
+            }
+            
             List<String> fileNames = getFilenameConstants(VPIConstants.class);
             while ((entree = zis.getNextEntry()) != null) {
 

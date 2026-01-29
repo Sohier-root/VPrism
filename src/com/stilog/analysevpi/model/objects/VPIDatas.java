@@ -1,7 +1,11 @@
 package com.stilog.analysevpi.model.objects;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,11 +14,16 @@ import com.stilog.analysevpi.model.vpsettings.Filter;
 import com.stilog.analysevpi.model.vpsettings.Hierarchies;
 import com.stilog.analysevpi.model.vpsettings.ImportExport;
 import com.stilog.analysevpi.model.vpsettings.ResourceModel;
+import com.stilog.analysevpi.utils.Compressor;
 import com.stilog.analysevpi.utils.Decompressor;
 import com.stilog.analysevpi.utils.VPIConstants;
 
 public class VPIDatas {
 
+	private static final String OUTPUT_DIR = System.getProperty("java.io.tmpdir") + "vpcompare/";
+	private static final String OUTPUT_DIR_TESTED = OUTPUT_DIR + "tested/";
+	private static final String OUTPUT_DIR_REF = OUTPUT_DIR + "ref/";
+	private static final String OUTPUT_DIR_MERGED = OUTPUT_DIR + "merged/";
 	String name;
 	String fileName;
 	String filePath;
@@ -43,7 +52,7 @@ public class VPIDatas {
 	/*
 	 * METHODS
 	 */
-	public void computeDatas(File vpi) {
+	public void computeDatas(File vpi, PositionFile position) {
 		
 		this.name = "VPI Datas";
 		this.fileName = vpi.getName();
@@ -51,18 +60,25 @@ public class VPIDatas {
 		this.lenght = vpi.length();
 		
 		String vpiPath = vpi.getAbsolutePath();
-		String outputDir = "tmp/dezipVPI/";
+		String outputDir = position == PositionFile.LEFT ? OUTPUT_DIR_REF : OUTPUT_DIR_TESTED;
 		Decompressor.dezipper(vpiPath, outputDir);
 		
 		File filesDir = new File(outputDir);
+		
+		/*
+		 * Parse des dimensions avant tout pour correspondances
+		 */
+		resourceModel = new ResourceModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_RESOURCE_MODEL, VPIConstants.NAME_TREE_RESOURCESMODEL);
+		resourceModel.parseDatas();
+		
 		for(File file : filesDir.listFiles()) {
 			try {
 				switch(file.getName()) {
 				//Récupération des données par fichier
-					case VPIConstants.FILENAME_RESOURCE_MODEL:
+					/*case VPIConstants.FILENAME_RESOURCE_MODEL:
 						resourceModel = new ResourceModel(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESMODEL);
 						resourceModel.parseDatas();
-						break;
+						break;*/
 						
 					case VPIConstants.FILENAME_RESOURCES_FILTER:
 						resourceFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESFILTER);
@@ -107,7 +123,34 @@ public class VPIDatas {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void generateMergedFiles(String outputPathVpi) {
+		File outputDirFile = new File(OUTPUT_DIR_MERGED);
+		if(outputDirFile.exists())
+			outputDirFile.delete();
+		outputDirFile.mkdir();
 		
+		try {
+			List<Field> refFiles = this.getFilesDatas();
+			for(int i = 0; i<refFiles.size(); i++) {
+				((FileDatas) refFiles.get(i).get(this)).generateFile(OUTPUT_DIR_MERGED);
+			}
+			
+			File vpiFileDir = new File(OUTPUT_DIR_TESTED);
+			for(File vpiFile : vpiFileDir.listFiles()) {
+				File mergedFile = new File(OUTPUT_DIR_MERGED + vpiFile.getName());
+				if(!mergedFile.exists()) {
+					Files.copy(Path.of(vpiFile.toURI()), new FileOutputStream(mergedFile));
+				}
+			}
+			
+			File destFile = new File(outputPathVpi + "\\" + this.fileName.replace(".vpi", "_merged.vpi").replace(".vps", "_merged.vps"));
+			Compressor.zip(outputDirFile, destFile);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public List<Field> getFilesDatas() {
@@ -123,6 +166,45 @@ public class VPIDatas {
 	    }
 
 	    return result;
+	}
+	
+	public void mergeParameter(FileDatas file, Entity entity, Parameters parameter, Parameters parameterToReplace) throws Exception {	
+		this.getFileDatasFromThis(file).mergeParameter(entity, parameter, parameterToReplace);
+	}
+	
+	public void mergeEntity(FileDatas file, Entity entity, Entity entityToReplace) throws Exception {
+		this.getFileDatasFromThis(file).mergeEntity(entity, entityToReplace);
+	}
+	
+	private FileDatas getFileDatasFromThis(FileDatas file){
+		switch(file.getFileName()) {
+		case VPIConstants.FILENAME_RESOURCE_MODEL:
+			return resourceModel;
+			
+		case VPIConstants.FILENAME_RESOURCES_FILTER:
+			return resourceFilter;
+			
+		case VPIConstants.FILENAME_EVENTS_FILTER:
+			return eventFilter;
+			
+		case VPIConstants.FILENAME_RESOURCES_EXPORT:
+			return exportResources;
+			
+		case VPIConstants.FILENAME_EVENTS_EXPORT:
+			return exportEvents;
+			
+		case VPIConstants.FILENAME_RESOURCES_IMPORT:
+			return importResources;
+			
+		case VPIConstants.FILENAME_EVENTS_IMPORT:
+			return importEvents;
+			
+		case VPIConstants.FILENAME_EVENTS_STRUCT:
+			return hierarchies;
+			
+		default:
+			return null;
+		}
 	}
 	
 	public String getName() {

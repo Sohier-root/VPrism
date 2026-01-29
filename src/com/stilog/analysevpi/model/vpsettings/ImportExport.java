@@ -11,6 +11,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.stilog.analysevpi.model.GeneralCorrespondance;
+import com.stilog.analysevpi.model.objects.Entity;
 import com.stilog.analysevpi.model.objects.Parameters;
 import com.stilog.analysevpi.utils.VPIConstants;
 
@@ -22,15 +23,29 @@ public class ImportExport extends FileDatas{
 	}
 	
 	/*
-	 * PARSING METHODS
+	 * PARSE XML
 	 */
-	protected List<Parameters> parseXml(String xml) {
+	@Override
+	protected List<Parameters> parseXml(Entity entity) {
 		
 		List<Parameters> paramList = new ArrayList<>();
-		Document doc = getDocument(xml);
+		Document doc = getDocument(entity.getAssociatedXml());
 		
 		Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
-		//String name = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_NAME).item(0).getTextContent();
+
+		/*
+		 * Ajout des attribut unique (id, uid ...)
+		 */
+		String id = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
+		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+		entity.setMergeable(true);
+		entity.setReplaceable(true);
+		
+		/*
+		 * Recupération de la configuration
+		 */
 		Element configuration = (Element) firstNodes.getElementsByTagName("configuration").item(0).getChildNodes();
 		
 		Node attributes = configuration.getElementsByTagName(VPIConstants.XML_TAG_EXPORTATTRIBUTES).item(0);
@@ -70,7 +85,8 @@ public class ImportExport extends FileDatas{
 				else if(!sourceAttribute.hasAttribute("isNull"))
 					value = sourceAttribute.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent();
 			}
-			
+			param.setReplaceable(true);
+			param.setEditableName(false);
 			param.addAttributes(name, value);
 		}
 		return param;
@@ -95,6 +111,8 @@ public class ImportExport extends FileDatas{
 			
 			param.addAttributes(paramSource.getNodeName(), paramSource.getTextContent());
 		}
+		param.setReplaceable(true);
+		param.setEditableName(false);
 		paramList.add(param);
 		
 		return paramList;

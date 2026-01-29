@@ -44,7 +44,7 @@ release:
   variables:
     APP_NAME: "VPCompare-release"
   tags:
-    - DEPLOY
+    - BUILD
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   rules:

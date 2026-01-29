@@ -5,9 +5,7 @@ import java.util.Map;
 
 public class GeneralCorrespondance {
 
-	private Map<String, String> rubCorr = new HashMap<>();
-
-	private Map<String, String> resourceModelCorr = new HashMap<>();
+	private Map<String, Correspondances> corrMap = new HashMap<>();
 	
 	private static GeneralCorrespondance instance;
 	
@@ -18,19 +16,22 @@ public class GeneralCorrespondance {
 		return instance;
 	}
 	
-	public void addRub(String key, String name) {
-		this.rubCorr.put(key, name);
+	public void addCorrespondance(String nodeName, String key, String value) {
+		Correspondances corr = null;
+		if(corrMap.containsKey(nodeName)) {
+			corr = corrMap.get(nodeName);
+		}
+		else {
+			corr = new Correspondances();
+		}
+		corr.addCorr(key, value);
+		this.corrMap.put(nodeName, corr);
 	}
 	
-	public String getRubName(String key) {
-		return this.rubCorr.get(key);
-	}
-	
-	public void addresourceModel(String key, String name) {
-		this.rubCorr.put(key, name);
-	}
-	
-	public String getResourceModelName(String key) {
-		return this.rubCorr.get(key);
+	public String getCorrespondance(String nodeName, String key) {
+		if(!this.corrMap.containsKey(nodeName)) {
+			return "";
+		}
+		return this.corrMap.get(nodeName).getCorrespondance(key);
 	}
 }

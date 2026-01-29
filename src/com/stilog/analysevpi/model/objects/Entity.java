@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class Entity {
+import com.stilog.analysevpi.utils.MethodUtil;
+import com.stilog.analysevpi.utils.VPIConstants;
 
-	private int uid;
+public class Entity extends Mergeable{
+
+	private int id;
 	private String name;
 	List<Parameters> parameters = new ArrayList<>();
-	private String associatedXml;
 	
 	private boolean anomaly = false;
+	private boolean resolve = false;
 	
 	public Entity(int id, String name) {
-		this.uid = id;
+		this.id = id;
 		this.name = name;
 	}
 	
@@ -29,6 +32,14 @@ public class Entity {
 		this.anomaly = anomaly;
 	}
 	
+	public boolean isResolve() {
+		return resolve;
+	}
+
+	public void setResolve(boolean resolve) {
+		this.resolve = resolve;
+	}
+
 	public void setParameters(List<Parameters> parameters) {
 		this.parameters = parameters;
 	}
@@ -51,17 +62,21 @@ public class Entity {
 		
 		return result;
 	}
-
-	public void setAssociatedXml(String associatedXml) {
-		this.associatedXml = associatedXml;
+	
+	public void addParameter(Parameters param) {
+		this.parameters.add(param);
 	}
-
-	public String getAssociatedXml() {
-		return associatedXml;
+	
+	public void removeParameter(Parameters param) {
+		this.parameters.remove(param);
 	}
 
 	public int getId() {
-		return uid;
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public String getName() {
@@ -83,6 +98,32 @@ public class Entity {
 			builder.append(param.toString() + System.lineSeparator());
 		return builder.toString();
 	}*/
+	
+	public String generateXml() {
+		for(String key : this.getUniqueAttributes().keySet()) {
+			String tagToReplace = "<" + key + ">*</" + key + ">";
+			String newTag = "<" + key + ">" + this.getUniqueAttribute(key) + "</" + key + ">";
+			this.setAssociatedXml(this.getAssociatedXml().replaceFirst(tagToReplace, newTag));
+			if(key.equals(VPIConstants.XML_TAG_ID))
+				this.setId(Integer.parseInt(this.getUniqueAttribute(key)));
+		}
+		
+		for(Parameters param : this.parameters) {
+			if(param.getInitialXml() == null)
+				continue;
+			//Si le paramètre a été ajouté 
+			if(param.isAdded()) {
+				String concatXml = param.getParentTag() + System.lineSeparator() + param.getAssociatedXml();
+				this.setAssociatedXml(this.getAssociatedXml().replace(param.getParentTag(), concatXml));
+			}
+			//Sinon, le paramètre a été remplacé
+			else {
+				this.setAssociatedXml(this.getAssociatedXml().replace(param.getInitialXml(), param.getAssociatedXml()));
+			}
+		}
+		
+		return MethodUtil.encodeBase64(this.getAssociatedXml());
+	}
 	
 	public void sort() {
 		parameters.sort(Comparator.comparing(Parameters::getName));

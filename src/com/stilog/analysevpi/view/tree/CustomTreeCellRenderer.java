@@ -18,6 +18,11 @@ public class CustomTreeCellRenderer extends DefaultTreeCellRenderer{
 
 	private static final long serialVersionUID = 1L;
 
+	private static final float[] RESOLVE_HSB = Color.RGBtoHSB(1, 150, 0, null);
+	private static final float[] ANOMALY_HSB = Color.RGBtoHSB(237, 27, 25, null);
+	
+	private static final Color RESOLVE_COLOR = Color.getHSBColor(RESOLVE_HSB[0], RESOLVE_HSB[1], RESOLVE_HSB[2]);
+	private static final Color ANOMALY_COLOR = Color.getHSBColor(ANOMALY_HSB[0], ANOMALY_HSB[1], ANOMALY_HSB[2]);
 	@Override
     public Component getTreeCellRendererComponent(
             JTree tree, Object value, boolean selected,
@@ -36,7 +41,10 @@ public class CustomTreeCellRenderer extends DefaultTreeCellRenderer{
         if (obj instanceof Attribute fd) {
         	c.setText(fd.toString());
             if (fd.isAnomaly()) {
-                c.setForeground(Color.RED);
+            	if(fd.isResolve())
+                	c.setForeground(RESOLVE_COLOR);
+            	else
+            		c.setForeground(ANOMALY_COLOR);
             } else {
                 c.setForeground(Color.BLACK);
             }
@@ -45,8 +53,12 @@ public class CustomTreeCellRenderer extends DefaultTreeCellRenderer{
         if (obj instanceof Parameters fd) {
         	c.setText(fd.getName());
             if (fd.isAnomaly()) {
-                c.setForeground(Color.RED);
-            } else {
+            	if(fd.isResolve()) {
+                	c.setForeground(RESOLVE_COLOR);
+            	}
+            	else
+            		c.setForeground(ANOMALY_COLOR);
+            }else {
                 c.setForeground(Color.BLACK);
             }
         }
@@ -54,7 +66,11 @@ public class CustomTreeCellRenderer extends DefaultTreeCellRenderer{
         if (obj instanceof Entity fd) {
         	c.setText(fd.getName());
             if (fd.isAnomaly()) {
-                c.setForeground(Color.RED);
+            	if(fd.isResolve()) {
+                	c.setForeground(RESOLVE_COLOR);
+            	}
+            	else
+            		c.setForeground(ANOMALY_COLOR);
             } else {
                 c.setForeground(Color.BLACK);
             }
@@ -63,7 +79,7 @@ public class CustomTreeCellRenderer extends DefaultTreeCellRenderer{
         if (obj instanceof FileDatas fd) {
         	c.setText(fd.getName());
             if (fd.isAnomaly()) {
-                c.setForeground(Color.RED);
+                c.setForeground(ANOMALY_COLOR);
             } else {
                 c.setForeground(Color.BLACK);
             }

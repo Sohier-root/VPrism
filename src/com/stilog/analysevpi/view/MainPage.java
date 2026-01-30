@@ -13,6 +13,7 @@ import com.stilog.analysevpi.model.objects.PositionFile;
 import com.stilog.analysevpi.utils.SystemInfo;
 import com.stilog.analysevpi.view.loading.LoadingIcon;
 import com.stilog.analysevpi.view.loading.LoadingWindow;
+import com.stilog.analysevpi.view.object.VButton;
 import com.stilog.analysevpi.view.tree.VPITree;
 
 import java.awt.*;
@@ -33,6 +34,19 @@ import java.util.concurrent.CompletableFuture;
  * InterfaceSwing_DoubleZone
  */
 public class MainPage extends JFrame {
+	/*
+	 * CONSTANTS
+	 */
+	private static final String TOOLTIP_SYNCHRONIZE = "Synchroniser les affichages";
+	private static final String TOOLTIP_DESYNCHRONIZE = "Désynchroniser les affichages";
+	private static final String TOOLTIP_DISPLAY_DIFFONLY = "Afficher seulement les différences";
+	private static final String TOOLTIP_DISPLAY_ALL = "Tout afficher";
+	private static final String TOOLTIP_GENERATE_VPI = "Generer un nouveau VPI/VPS";
+	private static final String TOOLTIP_REVERSE = "Intervertir les affichages";
+	
+	/*
+	 * VARIABLES
+	 */
 	private Controller controller;
 
 	private SystemInfo infos = SystemInfo.getInstance();
@@ -58,7 +72,7 @@ public class MainPage extends JFrame {
 	/*
 	 * Zone Sud
 	 */
-	private JButton compareBtn;
+	private VButton compareBtn;
 
 	/*
 	 * Toolbar
@@ -66,6 +80,7 @@ public class MainPage extends JFrame {
 	private JToggleButton synchronizeBtn;
 	private JToggleButton diffOnlyBtn;
 	private JButton generateFilesBtn;
+	private JButton reverseDatasBtn;
 	
 	/*
 	 * Icônes pour le bouton Generate Files
@@ -101,6 +116,7 @@ public class MainPage extends JFrame {
 		this.initSynchro();
 		this.initializeDiffOnlyToggle();
 		this.initializeGenerateFiles();
+		this.initializeReverseDatas();
 	}
 
 	private JPanel createZonePanel(String title, boolean isLeft) {
@@ -151,8 +167,6 @@ public class MainPage extends JFrame {
 				processFile(isLeft);
 				if (isLeft) {
 					this.browseBtnRight.setEnabled(true);
-				} else {
-					this.compareBtn.setEnabled(true);
 				}
 			});
 		});
@@ -162,8 +176,9 @@ public class MainPage extends JFrame {
 
 	private JPanel createCommonPanel(String title) {
 		JPanel panel = new JPanel(new BorderLayout(8, 8));
+		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-		JButton compareBtn = new JButton("Comparer");
+		VButton compareBtn = new VButton("Comparer");
 		compareBtn.putClientProperty("JButton.buttonType", "roundRect");
 		compareBtn.setEnabled(false);
 		panel.add(compareBtn, BorderLayout.CENTER);
@@ -171,6 +186,7 @@ public class MainPage extends JFrame {
 		compareBtn.addActionListener(e -> {
 			LoadingWindow.run(this, () -> {
 				treeLeft.update(controller.performComparison(), diffOnlyBtn.isSelected());
+				diffOnlyBtn.setEnabled(true);
 			});
 		});
 
@@ -194,6 +210,7 @@ public class MainPage extends JFrame {
 		// Optional: set filters
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("Fichiers VPI/VPS", "vpi", "vps");
 		chooser.setFileFilter(filter);
+		chooser.setCurrentDirectory(isLeft ? leftSelectedFile : rightSelectedFile);
 		int res = chooser.showOpenDialog(this);
 		if (res == JFileChooser.APPROVE_OPTION) {
 			File f = chooser.getSelectedFile();
@@ -220,34 +237,38 @@ public class MainPage extends JFrame {
 	}
 
 	public void processFile(boolean isLeft) {
-		if (isLeft) {
-			if (leftSelectedFile == null) {
-				JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (gauche).", "Erreur",
-						JOptionPane.WARNING_MESSAGE);
-				return;
-			}
-			// Appel vers fonction de traitement
-			try {
+		try {
+			if (isLeft) {
+				if (leftSelectedFile == null) {
+					JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (gauche).", "Erreur",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				// Appel vers fonction de traitement
 				treeLeft.update(controller.handleFile(leftSelectedFile, PositionFile.LEFT), diffOnlyBtn.isSelected());
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else {
-			if (rightSelectedFile == null) {
-				JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (droite).", "Erreur",
-						JOptionPane.WARNING_MESSAGE);
-				return;
-			}
-			try {
+				diffOnlyBtn.setSelected(false);
+				diffOnlyBtn.setEnabled(false);
+			} else {
+				if (rightSelectedFile == null) {
+					JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (droite).", "Erreur",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
 				// Désactiver le bouton generate et afficher l'icône de chargement
 				setGenerateFilesButtonLoading(true);
+
+				diffOnlyBtn.setSelected(false);
+				diffOnlyBtn.setEnabled(false);
 				
 				treeRight.update(controller.handleFile(rightSelectedFile, PositionFile.RIGHT),
 						diffOnlyBtn.isSelected());
-				
+
+				treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
+
 				// Récupérer le CompletableFuture pour savoir quand le dézipage est terminé
-				CompletableFuture<Boolean> unzipFuture = controller.getCompleteUnzipFuture(rightSelectedFile, PositionFile.RIGHT);
-				
+				CompletableFuture<Boolean> unzipFuture = controller.getCompleteUnzipFuture(rightSelectedFile,
+						PositionFile.RIGHT);
+
 				// Quand le dézipage est terminé, réactiver le bouton
 				unzipFuture.thenAccept(success -> {
 					SwingUtilities.invokeLater(() -> {
@@ -257,11 +278,14 @@ public class MainPage extends JFrame {
 						}
 					});
 				});
-				
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				setGenerateFilesButtonLoading(false);
 			}
+			
+			if (controller.getVPIData(PositionFile.RIGHT).isParsed()
+					&& controller.getVPIData(PositionFile.LEFT).isParsed()) {
+				this.compareBtn.setEnabled(true);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -295,12 +319,14 @@ public class MainPage extends JFrame {
 		/*
 		 * Boutton Synchro
 		 */
-		this.synchronizeBtn = new JToggleButton(FontIcon.of(MaterialDesign.MDI_SWAP_HORIZONTAL, 20));
+		this.synchronizeBtn = new JToggleButton(FontIcon.of(MaterialDesign.MDI_SYNC, 20));
 
 		/*
 		 * Boutton DiffOnly
 		 */
 		this.diffOnlyBtn = new JToggleButton(FontIcon.of(MaterialDesign.MDI_VECTOR_DIFFERENCE, 20));
+		this.diffOnlyBtn.setEnabled(false);
+		this.diffOnlyBtn.setToolTipText(TOOLTIP_DISPLAY_DIFFONLY);
 		
 		/*
 		 * Boutton Generate Files
@@ -308,14 +334,14 @@ public class MainPage extends JFrame {
 		this.generateFilesIconNormal = FontIcon.of(MaterialDesign.MDI_FILE_CHECK, 20);
 		this.generateFilesIconLoading = new LoadingIcon();
 		this.generateFilesBtn = new JButton(generateFilesIconNormal);
+		this.generateFilesBtn.setToolTipText(TOOLTIP_GENERATE_VPI);
 		this.generateFilesBtn.setEnabled(false); // Désactivé par défaut
-
+		
 		/*
-		 * ToolTip
+		 * Bouton Reverse
 		 */
-		this.synchronizeBtn.setToolTipText("Synchroniser les affichages");
-		this.diffOnlyBtn.setToolTipText("Afficher seulement les différences");
-		this.generateFilesBtn.setToolTipText("Generer un nouveau VPI");
+		this.reverseDatasBtn = new JButton(FontIcon.of(MaterialDesign.MDI_SWAP_HORIZONTAL, 20));
+		this.reverseDatasBtn.setToolTipText(TOOLTIP_REVERSE);
 
 		/*
 		 * Ajout a la toolbar
@@ -323,6 +349,7 @@ public class MainPage extends JFrame {
 		toolbar.add(diffOnlyBtn, BorderLayout.CENTER);
 		toolbar.add(synchronizeBtn, BorderLayout.CENTER);
 		toolbar.add(generateFilesBtn, BorderLayout.CENTER);
+		toolbar.add(reverseDatasBtn, BorderLayout.CENTER);
 
 		return toolbar;
 	}
@@ -379,6 +406,9 @@ public class MainPage extends JFrame {
 		treeRight.addTreeExpansionListener(rightTree);
 		scrollPanelLeft.getVerticalScrollBar().addAdjustmentListener(leftScroll);
 		scrollPanelRight.getVerticalScrollBar().addAdjustmentListener(rightScroll);
+		
+		this.synchronizeBtn.setIcon(FontIcon.of(MaterialDesign.MDI_SYNC, 20));
+		this.synchronizeBtn.setToolTipText(TOOLTIP_DESYNCHRONIZE);
 	}
 
 	private void disableSynchronization(TreeExpansionListener leftTree, TreeExpansionListener rightTree,
@@ -387,28 +417,22 @@ public class MainPage extends JFrame {
 		treeRight.removeTreeExpansionListener(rightTree);
 		scrollPanelLeft.getVerticalScrollBar().removeAdjustmentListener(leftScroll);
 		scrollPanelRight.getVerticalScrollBar().removeAdjustmentListener(rightScroll);
+		
+		this.synchronizeBtn.setIcon(FontIcon.of(MaterialDesign.MDI_SYNC_OFF, 20));
+		this.synchronizeBtn.setToolTipText(TOOLTIP_SYNCHRONIZE);
 	}
 
 	private void initializeDiffOnlyToggle() {
 		this.diffOnlyBtn.addItemListener(e -> {
 	        if (e.getStateChange() == ItemEvent.SELECTED) {
+	        	diffOnlyBtn.setToolTipText(TOOLTIP_DISPLAY_ALL);
 	        	diffOnlyBtn.setSelected(true);
 	        } else {
+	        	diffOnlyBtn.setToolTipText(TOOLTIP_DISPLAY_DIFFONLY);
 	        	diffOnlyBtn.setSelected(false);
 	        }
 	        treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
 		});
-		/*this.diffOnlyBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				// Toggle l'état
-				diffOnlyBtn.setSelected(!diffOnlyBtn.isSelected());
-
-				// Mettre à jour l'arbre
-				treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
-				//treeRight.update(controller.getVPIData(PositionFile.RIGHT), diffOnlyBtn.isSelected());
-			}
-		});*/
 	}
 
 	private void initializeGenerateFiles() {
@@ -420,6 +444,27 @@ public class MainPage extends JFrame {
 					controller.performGenerateVPI(outputPath);
 				});
 			}
+		});
+	}
+	
+	private void initializeReverseDatas() {
+		this.reverseDatasBtn.addActionListener(e -> {
+			//Reset de la toolbar
+			this.diffOnlyBtn.setSelected(false);
+			
+			//Datas and trees
+			controller.performReverse();
+			treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
+			treeRight.update(controller.getVPIData(PositionFile.RIGHT), diffOnlyBtn.isSelected());
+			
+			//File
+			String oldLeft = this.leftFileField.getText();
+			this.leftFileField.setText(this.rightFileField.getText());
+			this.rightFileField.setText(oldLeft);
+			
+			File oldLeftFile = this.leftSelectedFile;
+			this.leftSelectedFile = this.rightSelectedFile;
+			this.rightSelectedFile = oldLeftFile;
 		});
 	}
 	

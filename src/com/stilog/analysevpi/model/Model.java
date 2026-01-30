@@ -12,6 +12,9 @@ public class Model {
 	
 	public void processFile(File file, PositionFile position) {
 		getData(position).computeDatas(file, position);
+		if(position == PositionFile.RIGHT) {
+			gauche.reset();
+		}
 	}
 	
 	/*
@@ -27,6 +30,17 @@ public class Model {
 			return null;
 		}
 	}
+	
+	public void reverse() {
+		VPIDatas prevLeft = gauche;
+		
+		this.gauche = this.droite;
+		this.droite = prevLeft;
+		
+		if(this.droite.isParsed())
+			this.droite.reset();
+	}
+	
 	public void setGauche(VPIDatas gauche) {
 		this.gauche = gauche;
 	}

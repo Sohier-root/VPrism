@@ -13,9 +13,6 @@ public class Entity extends Mergeable{
 	private String name;
 	List<Parameters> parameters = new ArrayList<>();
 	
-	private boolean anomaly = false;
-	private boolean resolve = false;
-	
 	public Entity(int id, String name) {
 		this.id = id;
 		this.name = name;
@@ -24,21 +21,6 @@ public class Entity extends Mergeable{
 	/*
 	 * GETTER & SETTER
 	 */
-	public boolean isAnomaly() {
-		return anomaly;
-	}
-
-	public void setAnomaly(boolean anomaly) {
-		this.anomaly = anomaly;
-	}
-	
-	public boolean isResolve() {
-		return resolve;
-	}
-
-	public void setResolve(boolean resolve) {
-		this.resolve = resolve;
-	}
 
 	public void setParameters(List<Parameters> parameters) {
 		this.parameters = parameters;
@@ -90,14 +72,6 @@ public class Entity extends Mergeable{
 	/*
 	 * METHODS
 	 */
-	/*@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Entity [name=" + name + "]" + System.lineSeparator());
-		for(Parameters param : parameters)
-			builder.append(param.toString() + System.lineSeparator());
-		return builder.toString();
-	}*/
 	
 	public String generateXml() {
 		for(String key : this.getUniqueAttributes().keySet()) {
@@ -123,6 +97,15 @@ public class Entity extends Mergeable{
 		}
 		
 		return MethodUtil.encodeBase64(this.getAssociatedXml());
+	}
+	
+	@Override
+	public void reset() {
+		super.reset();
+		
+		for(Parameters param : this.parameters) {
+			param.reset();
+		}
 	}
 	
 	public void sort() {

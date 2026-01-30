@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.module.ResolutionException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -26,11 +27,12 @@ import com.stilog.analysevpi.model.GeneralCorrespondance;
 import com.stilog.analysevpi.model.objects.Entity;
 import com.stilog.analysevpi.model.objects.Mergeable;
 import com.stilog.analysevpi.model.objects.Parameters;
+import com.stilog.analysevpi.model.objects.Resolveable;
 import com.stilog.analysevpi.utils.GUID;
 import com.stilog.analysevpi.utils.MethodUtil;
 import com.stilog.analysevpi.utils.VPIConstants;
 
-public abstract class FileDatas {
+public abstract class FileDatas extends Resolveable{
 	
 	private static final String SEPARATOR = ";";
 	private static final String LINE_SEPARATOR = System.lineSeparator();
@@ -39,8 +41,6 @@ public abstract class FileDatas {
 	String name;
 	File file;
 	List<Entity> entities = new ArrayList<>();
-	
-	boolean anomaly = false;
 	
 	public FileDatas(String filePath, String name) {
 		super();
@@ -70,14 +70,6 @@ public abstract class FileDatas {
 
 	public String getFileName() {
 		return file.getName();
-	}
-	
-	public boolean isAnomaly() {
-		return anomaly;
-	}
-
-	public void setAnomaly(boolean anomaly) {
-		this.anomaly = anomaly;
 	}
 
 	public String getName() {
@@ -215,6 +207,13 @@ public abstract class FileDatas {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public void reset() {
+		super.reset();
+		for(Entity ent : this.entities) {
+			ent.reset();
 		}
 	}
 

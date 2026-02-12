@@ -243,40 +243,39 @@ public class MainPage extends JFrame {
 
 	public void processFile(boolean isLeft) {
 		try {
-		if (isLeft) {
-			if (leftSelectedFile == null) {
-				JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (gauche).", "Erreur",
-						JOptionPane.WARNING_MESSAGE);
-				return;
-			}
-			// Appel vers fonction de traitement
+			if (isLeft) {
+				if (leftSelectedFile == null) {
+					JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (gauche).", "Erreur",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
+				// Appel vers fonction de traitement
 
 				treeLeft.update(controller.handleFile(leftSelectedFile, PositionFile.LEFT), diffOnlyBtn.isSelected());
-			}
 				diffOnlyBtn.setSelected(false);
 				diffOnlyBtn.setEnabled(false);
-		} else {
-			if (rightSelectedFile == null) {
-				JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (droite).", "Erreur",
-						JOptionPane.WARNING_MESSAGE);
-				return;
-			}
+			} else {
+				if (rightSelectedFile == null) {
+					JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (droite).", "Erreur",
+							JOptionPane.WARNING_MESSAGE);
+					return;
+				}
 
 				// Désactiver le bouton generate et afficher l'icône de chargement
 				setGenerateFilesButtonLoading(true);
-				
+
 				diffOnlyBtn.setSelected(false);
 				diffOnlyBtn.setEnabled(false);
-				
+
 				treeRight.update(controller.handleFile(rightSelectedFile, PositionFile.RIGHT),
 						diffOnlyBtn.isSelected());
-				
+
 				treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
 
 				// Récupérer le CompletableFuture pour savoir quand le dézipage est terminé
 				CompletableFuture<Boolean> unzipFuture = controller.getCompleteUnzipFuture(rightSelectedFile,
 						PositionFile.RIGHT);
-				
+
 				// Quand le dézipage est terminé, réactiver le bouton
 				unzipFuture.thenAccept(success -> {
 					SwingUtilities.invokeLater(() -> {
@@ -287,7 +286,7 @@ public class MainPage extends JFrame {
 					});
 				});
 			}
-				
+
 			setGenerateFilesButtonLoading(false);
 			if (controller.getVPIData(PositionFile.RIGHT).isParsed()
 					&& controller.getVPIData(PositionFile.LEFT).isParsed()) {
@@ -492,6 +491,7 @@ public class MainPage extends JFrame {
 	private void openDocumentation() {
 	    DocumentationWindow docWindow = new DocumentationWindow();
 	    docWindow.setVisible(true);
+	}
 
 	
 	@Override

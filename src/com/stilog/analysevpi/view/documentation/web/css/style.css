@@ -71,3 +71,8 @@ li img {
     vertical-align: middle;
     margin-right: 8px;
 }
+
+img.screenshot{
+	width: 200px;
+    height: auto;
+}

@@ -27,7 +27,10 @@ public class VPIConstants {
 	public static final String XML_TAG_COLUMNNAME = "columnName";
 	public static final String XML_TAG_COLUMN = "column";
 	public static final String XML_TAG_SOURCEATTRIBUTE = "sourceAttribute";
+	public static final String XML_TAG_CONFIGURATION = "configuration";
 	public static final String XML_TAG_KEY = "key";
+	public static final String XML_TAG_KEY_ATTRIBUTES = "keyAttributes";
+	public static final String XML_TAG_PARENT_KEY_ATTRIBUTES = "parentKeyAttributes";
 	public static final String XML_TAG_KEYHEADINGS = "keyHeadings";
 	public static final String XML_TAG_LABELSHEADINGS = "labelsHeadings";
 	public static final String XML_TAG_MANDATORY = "mandatory";
@@ -44,23 +47,29 @@ public class VPIConstants {
 	public static final String XML_TAG_URL = "url";
 	public static final String XML_TAG_EVENT_STRUCT = "eventStructNode";
 	public static final String XML_TAG_MODEL_STRUCT = "resourceModelStructs";
+	public static final String XML_TAG_IMPORT_MODE = "importMode";
+	public static final String XML_TAG_DATE_FORMAT = "dateFormat";
 	
-	public static final String PARAMETER_NAME = "Name";
+	public static final String PARAMETER_NAME = "Nom";
 	public static final String PARAMETER_ID = "ID";
-	public static final String PARAMETER_RESOURCEMODEL = "ResourceModel";
+	public static final String PARAMETER_RESOURCEMODEL = "Dimension";
 	public static final String PARAMETER_TYPE = "Type";
 	public static final String PARAMETER_HEADING = "Heading";
-	public static final String PARAMETER_KEY = "Key";
-	public static final String PARAMETER_KEYHEADINGS = "KeyHeadings";
-	public static final String PARAMETER_LABELSHEADINGS = "LabelsHeadings";
-	public static final String PARAMETER_MANDATORY = "Mandatory";
+	public static final String PARAMETER_KEY = "Rubrique unique";
+	public static final String PARAMETER_KEY_PARENT = "Cle parent";
+	public static final String PARAMETER_KEYHEADINGS = "Rubrique d'identification";
+	public static final String PARAMETER_LABELSHEADINGS = "Rubriques d'affichage";
+	public static final String PARAMETER_MANDATORY = "Rubriques Obligatoire";
 	public static final String PARAMETER_CONDITIONS = "Conditions";
 	public static final String PARAMETER_CORRESPONDANCE = "Correspondances";
 	public static final String PARAMETER_SOURCE = "Source";
 	public static final String PARAMETER_ENCODING = "Encoding";
 	public static final String PARAMETER_FORMAT = "Format";
-	public static final String PARAMETER_SEPARATOR = "Separator";
+	public static final String PARAMETER_SEPARATOR = "Separateur";
 	public static final String PARAMETER_URL = "Url";
+	public static final String PARAMETER_PARAMETRE = "Parametres";
+	public static final String PARAMETER_IMPORT_MODE = "Mode d'import";
+	public static final String PARAMETER_DATE_FORMAT = "Format de date";
 	
 	public static final String NAME_TREE_RESOURCESMODEL = "Resources Model";
 	public static final String NAME_TREE_RESOURCESFILTER = "Resources Filter";

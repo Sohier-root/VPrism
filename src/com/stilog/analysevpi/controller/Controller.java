@@ -72,6 +72,10 @@ public class Controller {
 		return model.getData(PositionFile.LEFT);
 	}
 	
+	public void performReverse() {
+		model.reverse();
+	}
+	
 	/**
 	 * Méthode unifiée pour gérer toutes les opérations de merge
 	 * Retourne les données mises à jour

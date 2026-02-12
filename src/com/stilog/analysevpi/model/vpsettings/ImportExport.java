@@ -46,7 +46,7 @@ public class ImportExport extends FileDatas{
 		/*
 		 * Recupération de la configuration
 		 */
-		Element configuration = (Element) firstNodes.getElementsByTagName("configuration").item(0).getChildNodes();
+		Element configuration = (Element) firstNodes.getElementsByTagName(VPIConstants.XML_TAG_CONFIGURATION).item(0).getChildNodes();
 		
 		Node attributes = configuration.getElementsByTagName(VPIConstants.XML_TAG_EXPORTATTRIBUTES).item(0);
 		if(attributes == null)
@@ -99,7 +99,7 @@ public class ImportExport extends FileDatas{
 		/*
 		 * SOURCE
 		 */
-		Parameters param = new Parameters(VPIConstants.PARAMETER_SOURCE);
+		Parameters paramSrc = new Parameters(VPIConstants.PARAMETER_SOURCE);
 		Element source = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_SOURCECONFIG).item(0);
 		NodeList paramsSource = source.getChildNodes();
 		for(int i = 0; i<paramsSource.getLength();i++) {
@@ -109,11 +109,82 @@ public class ImportExport extends FileDatas{
 			if(this.isExcludedTag(paramSource.getNodeName()))
 				continue;
 			
-			param.addAttributes(paramSource.getNodeName(), paramSource.getTextContent());
+			paramSrc.addAttributes(paramSource.getNodeName(), paramSource.getTextContent());
 		}
-		param.setReplaceable(true);
-		param.setEditableName(false);
-		paramList.add(param);
+		paramSrc.setReplaceable(true);
+		paramSrc.setEditableName(false);
+		paramList.add(paramSrc);
+		
+		/*
+		 * KEY
+		 */
+		Parameters paramKey = new Parameters(VPIConstants.PARAMETER_KEY);
+		Element keyAttr = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_KEY_ATTRIBUTES).item(0);
+		
+		NodeList keyList = keyAttr.getChildNodes();
+		int keyIndex = 0;
+		for(int i = 0; i<keyList.getLength(); i++) {
+			if (keyList.item(i).getNodeType() != Node.ELEMENT_NODE)
+	            continue;
+			Element key = (Element) keyList.item(i);
+			paramKey.addAttributes(VPIConstants.PARAMETER_KEY + keyIndex, key.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent());
+			keyIndex++;
+		}
+		paramKey.setReplaceable(true);
+		paramKey.setEditableName(false);
+		if(keyIndex != 0)
+			paramList.add(paramKey);
+		
+		/*
+		 * KEY PARENT
+		 */
+		Parameters paramKeyParent = new Parameters(VPIConstants.PARAMETER_KEY_PARENT);
+		Element keyParentAttr = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_PARENT_KEY_ATTRIBUTES).item(0);
+		
+		if(keyParentAttr != null) {
+			NodeList keyParentList = keyParentAttr.getChildNodes();
+			int keyParentIndex = 0;
+			for(int j = 0; j<keyParentList.getLength(); j++) {
+				if (keyParentList.item(j).getNodeType() != Node.ELEMENT_NODE)
+		            continue;
+				Element key = (Element) keyParentList.item(j);
+				paramKeyParent.addAttributes(VPIConstants.PARAMETER_KEY_PARENT + keyParentIndex, key.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent());
+				keyParentIndex++;
+			}
+			
+			paramKeyParent.setReplaceable(true);
+			paramKeyParent.setEditableName(false);
+			if(keyParentIndex != 0)
+				paramList.add(paramKeyParent);
+		}
+		
+		/*
+		 * PARAMETRE
+		 */
+		Parameters paramParam = new Parameters(VPIConstants.PARAMETER_PARAMETRE);
+		
+		//Mode d'import (Import ressources/evenements)
+		Element importMode = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_IMPORT_MODE).item(0);
+		if(importMode != null)
+			paramParam.addAttributes(VPIConstants.PARAMETER_IMPORT_MODE, importMode.getTextContent());
+		
+		//Modele de ressource associé (Import/Export de ressource)
+		Element resourceModel = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODEL).item(0);
+		if(resourceModel != null) {
+			Element entityId =  (Element) resourceModel.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0);
+			String resourceModelName = GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.XML_TAG_ID, entityId.getTextContent());
+			
+			paramParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, resourceModelName);
+		}
+		
+		//Format de date (Import/Export d'événements)
+		Element dateFormat = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_DATE_FORMAT).item(0);
+		if(dateFormat != null)
+			paramParam.addAttributes(VPIConstants.PARAMETER_DATE_FORMAT, dateFormat.getTextContent());
+		
+		paramParam.setReplaceable(true);
+		paramParam.setEditableName(false);
+		paramList.add(paramParam);
 		
 		return paramList;
 	}

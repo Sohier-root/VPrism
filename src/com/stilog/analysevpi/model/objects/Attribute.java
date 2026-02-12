@@ -1,12 +1,9 @@
 package com.stilog.analysevpi.model.objects;
 
-public class Attribute {
+public class Attribute extends Resolveable {
 
 	private String key;
 	private String value;
-	
-	private boolean anomaly = false;
-	private boolean resolve = false;
 	
 	public Attribute(String key, String value) {
 		super();
@@ -28,22 +25,6 @@ public class Attribute {
 
 	public void setValue(String value) {
 		this.value = value;
-	}
-
-	public boolean isAnomaly() {
-		return anomaly;
-	}
-
-	public void setAnomaly(boolean anomaly) {
-		this.anomaly = anomaly;
-	}
-
-	public boolean isResolve() {
-		return resolve;
-	}
-
-	public void setResolve(boolean resolve) {
-		this.resolve = resolve;
 	}
 
 	@Override

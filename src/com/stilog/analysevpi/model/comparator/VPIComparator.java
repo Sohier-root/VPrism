@@ -21,10 +21,10 @@ public class VPIComparator {
 			/*
 			 * Scan de toutes les données à comparer
 			 */
-			List<Field> refFiles = ref.getFilesDatas();
-			List<Field> testedFiles = tested.getFilesDatas();
+			List<FileDatas> refFiles = ref.getFilesDatas();
+			List<FileDatas> testedFiles = tested.getFilesDatas();
 			for(int i = 0; i<refFiles.size(); i++) {
-				compare((FileDatas) refFiles.get(i).get(ref), (FileDatas) testedFiles.get(i).get(tested));
+				compare(refFiles.get(i), testedFiles.get(i));
 			}
 		}
 		catch(Exception e) {

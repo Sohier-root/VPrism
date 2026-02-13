@@ -14,9 +14,6 @@ public class Parameters extends Mergeable{
 	private String uid;
 	private List<Attribute> attributes = new ArrayList<>();
 	
-	private boolean anomaly = false;
-	private boolean resolve = false;
-	
 	public Parameters(String name) {
 		this.name = name;
 	}
@@ -25,6 +22,17 @@ public class Parameters extends Mergeable{
 		this.name = name;
 		this.setInitialXml(xml);
 		this.setAssociatedXml(xml);
+	}
+	/*
+	 * METHODES
+	 */
+	@Override
+	public void reset() {
+		super.reset();
+		
+		for(Attribute attr : attributes) {
+			attr.reset();
+		}
 	}
 	
 	/*
@@ -39,20 +47,8 @@ public class Parameters extends Mergeable{
 		return null;
 	}
 
-	public boolean isAnomaly() {
-		return anomaly;
-	}
-
-	public void setAnomaly(boolean anomaly) {
-		this.anomaly = anomaly;
-	}
-
-	public boolean isResolve() {
-		return resolve;
-	}
-
 	public void setResolve(boolean resolve) {
-		this.resolve = resolve;
+		super.setResolve(resolve);
 		
 		for(Attribute attr : this.attributes) {
 			attr.setResolve(true);

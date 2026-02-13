@@ -34,6 +34,10 @@ public class VPIDatas {
 	ImportExport exportResources, exportEvents, importResources, importEvents;
 	Hierarchies hierarchies;
 	
+	public VPIDatas() {
+		this.name = "VPI Datas";
+	}
+	
 	/*
 	 * GETTER & SETTER
 	 */
@@ -132,9 +136,9 @@ public class VPIDatas {
 		outputDirFile.mkdir();
 		
 		try {
-			List<Field> refFiles = this.getFilesDatas();
+			List<FileDatas> refFiles = this.getFilesDatas();
 			for(int i = 0; i<refFiles.size(); i++) {
-				((FileDatas) refFiles.get(i).get(this)).generateFile(OUTPUT_DIR_MERGED);
+				refFiles.get(i).generateFile(OUTPUT_DIR_MERGED);
 			}
 			
 			File vpiFileDir = new File(OUTPUT_DIR_TESTED);
@@ -153,15 +157,27 @@ public class VPIDatas {
 		}
 	}
 
-	public List<Field> getFilesDatas() {
-	    List<Field> result = new ArrayList<>();
+	/**
+	 * Remet a zéro les données de comparaison
+	 */
+	public void reset() {
+		for(FileDatas datas : this.getFilesDatas()) {
+			datas.reset();
+		}
+	}
+	
+	public List<FileDatas> getFilesDatas() {
+	    List<FileDatas> result = new ArrayList<>();
 
 	    Class<?> clazz = this.getClass();
 
 	    for (Field field : clazz.getDeclaredFields()) {
 	    	if (FileDatas.class.isAssignableFrom(field.getType())) {
+	    		try {
 	    		field.setAccessible(true);
-	    	    result.add(field);
+	    	    result.add((FileDatas) field.get(this));
+	    		}
+	    		catch(Exception e) {e.printStackTrace();}
 	    	}
 	    }
 
@@ -226,7 +242,11 @@ public class VPIDatas {
 		String sep = System.lineSeparator();
 		StringBuilder builder = new StringBuilder();
 		builder.append("VPIDatas [fileName=" + fileName + ", lenght=" + lenght + "]" + sep);
-		builder.append(resourceModel.toString());
+		builder.append(resourceModel != null?resourceModel.toString():"");
 		return builder.toString();
+	}
+
+	public boolean isParsed() {
+		return fileName != null && !fileName.isBlank();
 	}
 }

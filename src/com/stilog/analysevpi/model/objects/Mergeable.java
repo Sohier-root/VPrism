@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Mergeable {
+public abstract class Mergeable extends Resolveable {
 
 	private Map<String, String> uniqueAttributes = new HashMap<>();
 	

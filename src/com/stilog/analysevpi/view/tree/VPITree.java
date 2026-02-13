@@ -100,10 +100,10 @@ public class VPITree extends JTree {
 
 			DefaultMutableTreeNode root = new DefaultMutableTreeNode(datas);
 
-			List<Field> datasFiles = datas.getFilesDatas();
+			List<FileDatas> datasFiles = datas.getFilesDatas();
 
 			for (int i = 0; i < datasFiles.size(); i++) {
-				FileDatas fileDatas = (FileDatas) datasFiles.get(i).get(datas);
+				FileDatas fileDatas = datasFiles.get(i);
 				if (fileDatas == null)
 					continue;
 				fileDatas.sort();

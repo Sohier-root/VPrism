@@ -8,11 +8,11 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
-import com.stilog.analysevpi.model.objects.Attribute;
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Parameters;
-import com.stilog.analysevpi.model.objects.VPIDatas;
-import com.stilog.analysevpi.model.vpsettings.FileDatas;
+import com.stilog.vpimodel.objects.Attribute;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.objects.VPIDatas;
+import com.stilog.vpimodel.vpsettings.FileDatas;
 
 public class CustomTreeCellRenderer extends DefaultTreeCellRenderer{
 

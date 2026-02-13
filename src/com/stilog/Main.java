@@ -1,4 +1,4 @@
-package com.stilog.analysevpi;
+package com.stilog;
 
 import java.net.URL;
 
@@ -9,9 +9,10 @@ import javax.swing.UIManager;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
-import com.stilog.analysevpi.controller.Controller;
-import com.stilog.analysevpi.model.Model;
-import com.stilog.analysevpi.view.MainPage;
+import com.stilog.analysevpi.controller.ComparisonController;
+import com.stilog.analysevpi.model.ComparisonModel;
+import com.stilog.analysevpi.view.ComparisonMainPage;
+import com.stilog.view.MainFrame;
 
 public class Main {
     public static void main(String[] args) {
@@ -19,9 +20,7 @@ public class Main {
     	configureInterface();
         
         SwingUtilities.invokeLater(() -> {
-        	Model model = new Model();
-        	Controller controller = new Controller(model);
-            MainPage frame = new MainPage(controller);
+            MainFrame frame = new MainFrame();
             frame.setVisible(true);
         });
     }

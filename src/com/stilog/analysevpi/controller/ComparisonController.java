@@ -3,21 +3,21 @@ package com.stilog.analysevpi.controller;
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
 
-import com.stilog.analysevpi.model.Model;
+import com.stilog.analysevpi.model.ComparisonModel;
 import com.stilog.analysevpi.model.comparator.VPIComparator;
 import com.stilog.analysevpi.model.dto.MergeRequest;
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Parameters;
-import com.stilog.analysevpi.model.objects.PositionFile;
-import com.stilog.analysevpi.model.objects.VPIDatas;
-import com.stilog.analysevpi.model.vpsettings.FileDatas;
 import com.stilog.analysevpi.utils.AsyncDecompressor;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.objects.PositionFile;
+import com.stilog.vpimodel.objects.VPIDatas;
+import com.stilog.vpimodel.vpsettings.FileDatas;
 
-public class Controller {
+public class ComparisonController {
 
-	private Model model;
+	private ComparisonModel model;
 	
-	public Controller(Model model) {
+	public ComparisonController(ComparisonModel model) {
 		this.model = model;
 	}
 	

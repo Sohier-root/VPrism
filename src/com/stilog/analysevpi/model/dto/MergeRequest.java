@@ -1,8 +1,8 @@
 package com.stilog.analysevpi.model.dto;
 
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Parameters;
-import com.stilog.analysevpi.model.vpsettings.FileDatas;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.vpsettings.FileDatas;
 
 public class MergeRequest {
 	

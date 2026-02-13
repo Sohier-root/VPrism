@@ -1,4 +1,4 @@
-package com.stilog.analysevpi.model.vpsettings;
+package com.stilog.vpimodel.vpsettings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,9 +11,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.stilog.analysevpi.model.GeneralCorrespondance;
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Parameters;
 import com.stilog.analysevpi.utils.VPIConstants;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Parameters;
 
 public class ImportExport extends FileDatas{
 	boolean isImport = false;

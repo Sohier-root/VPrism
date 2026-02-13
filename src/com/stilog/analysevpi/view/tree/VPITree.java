@@ -19,26 +19,26 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import com.stilog.analysevpi.controller.Controller;
+import com.stilog.analysevpi.controller.ComparisonController;
 import com.stilog.analysevpi.model.dto.MergeRequest;
-import com.stilog.analysevpi.model.objects.Attribute;
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Mergeable;
-import com.stilog.analysevpi.model.objects.Parameters;
-import com.stilog.analysevpi.model.objects.VPIDatas;
-import com.stilog.analysevpi.model.vpsettings.FileDatas;
+import com.stilog.vpimodel.objects.Attribute;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Mergeable;
+import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.objects.VPIDatas;
+import com.stilog.vpimodel.vpsettings.FileDatas;
 
 public class VPITree extends JTree {
 
 	private static final long serialVersionUID = 1L;
 
-	private Controller controller;
+	private ComparisonController controller;
 	private VPITree otherTree;
 
 	boolean isRefTree = false;
 	boolean onlyDiff = false;
 
-	public VPITree(Controller controller, boolean isRefTree) {
+	public VPITree(ComparisonController controller, boolean isRefTree) {
 		super();
 		this.isRefTree = isRefTree;
 		this.controller = controller;

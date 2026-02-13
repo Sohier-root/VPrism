@@ -1,4 +1,4 @@
-package com.stilog.analysevpi.model.objects;
+package com.stilog.vpimodel.objects;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -9,14 +9,14 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.stilog.analysevpi.model.vpsettings.FileDatas;
-import com.stilog.analysevpi.model.vpsettings.Filter;
-import com.stilog.analysevpi.model.vpsettings.Hierarchies;
-import com.stilog.analysevpi.model.vpsettings.ImportExport;
-import com.stilog.analysevpi.model.vpsettings.ResourceModel;
 import com.stilog.analysevpi.utils.Compressor;
 import com.stilog.analysevpi.utils.Decompressor;
 import com.stilog.analysevpi.utils.VPIConstants;
+import com.stilog.vpimodel.vpsettings.FileDatas;
+import com.stilog.vpimodel.vpsettings.Filter;
+import com.stilog.vpimodel.vpsettings.Hierarchies;
+import com.stilog.vpimodel.vpsettings.ImportExport;
+import com.stilog.vpimodel.vpsettings.ResourceModel;
 
 public class VPIDatas {
 

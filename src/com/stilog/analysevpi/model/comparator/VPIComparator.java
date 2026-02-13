@@ -3,18 +3,18 @@ package com.stilog.analysevpi.model.comparator;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import com.stilog.analysevpi.model.Model;
-import com.stilog.analysevpi.model.objects.Attribute;
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Parameters;
-import com.stilog.analysevpi.model.objects.PositionFile;
-import com.stilog.analysevpi.model.objects.VPIDatas;
-import com.stilog.analysevpi.model.vpsettings.FileDatas;
+import com.stilog.analysevpi.model.ComparisonModel;
 import com.stilog.analysevpi.utils.VPIConstants;
+import com.stilog.vpimodel.objects.Attribute;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.objects.PositionFile;
+import com.stilog.vpimodel.objects.VPIDatas;
+import com.stilog.vpimodel.vpsettings.FileDatas;
 
 public class VPIComparator {
 
-	public static void compare(Model model) {
+	public static void compare(ComparisonModel model) {
 		VPIDatas ref = model.getData(PositionFile.LEFT);
 		VPIDatas tested = model.getData(PositionFile.RIGHT);
 		try {

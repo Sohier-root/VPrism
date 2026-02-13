@@ -2,10 +2,10 @@ package com.stilog.analysevpi.model;
 
 import java.io.File;
 
-import com.stilog.analysevpi.model.objects.PositionFile;
-import com.stilog.analysevpi.model.objects.VPIDatas;
+import com.stilog.vpimodel.objects.PositionFile;
+import com.stilog.vpimodel.objects.VPIDatas;
 
-public class Model {
+public class ComparisonModel {
 
 	private VPIDatas gauche = new VPIDatas();
 	private VPIDatas droite = new VPIDatas();

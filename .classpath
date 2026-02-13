@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="lib/ikonli-materialdesign-pack-12.4.0.jar"/>
 	<classpathentry kind="lib" path="lib/ikonli-core-12.4.0.jar"/>
 	<classpathentry kind="lib" path="lib/flatlaf-3.7.jar"/>
+	<classpathentry kind="lib" path="lib/poi-ooxml-5.5.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

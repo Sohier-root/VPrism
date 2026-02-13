@@ -1,4 +1,4 @@
-package com.stilog.analysevpi.model.objects;
+package com.stilog.vpimodel.objects;
 
 import java.util.ArrayList;
 import java.util.Comparator;

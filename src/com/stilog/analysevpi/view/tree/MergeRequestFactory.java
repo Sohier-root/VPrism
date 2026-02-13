@@ -3,9 +3,9 @@ package com.stilog.analysevpi.view.tree;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.stilog.analysevpi.model.dto.MergeRequest;
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Parameters;
-import com.stilog.analysevpi.model.vpsettings.FileDatas;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.vpsettings.FileDatas;
 
 /**
 * Factory pour créer des MergeRequest à partir de la structure de l'arbre

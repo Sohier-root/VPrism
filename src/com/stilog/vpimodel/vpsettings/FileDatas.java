@@ -1,4 +1,4 @@
-package com.stilog.analysevpi.model.vpsettings;
+package com.stilog.vpimodel.vpsettings;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,13 +24,13 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 import com.stilog.analysevpi.model.GeneralCorrespondance;
-import com.stilog.analysevpi.model.objects.Entity;
-import com.stilog.analysevpi.model.objects.Mergeable;
-import com.stilog.analysevpi.model.objects.Parameters;
-import com.stilog.analysevpi.model.objects.Resolveable;
 import com.stilog.analysevpi.utils.GUID;
 import com.stilog.analysevpi.utils.MethodUtil;
 import com.stilog.analysevpi.utils.VPIConstants;
+import com.stilog.vpimodel.objects.Entity;
+import com.stilog.vpimodel.objects.Mergeable;
+import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.objects.Resolveable;
 
 public abstract class FileDatas extends Resolveable{
 	

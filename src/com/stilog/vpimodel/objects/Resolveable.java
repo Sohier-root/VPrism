@@ -1,4 +1,4 @@
-package com.stilog.analysevpi.model.objects;
+package com.stilog.vpimodel.objects;
 
 public abstract class Resolveable {
 

@@ -8,14 +8,14 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.kordamp.ikonli.materialdesign.MaterialDesign;
 import org.kordamp.ikonli.swing.FontIcon;
 
-import com.stilog.analysevpi.controller.Controller;
-import com.stilog.analysevpi.model.objects.PositionFile;
+import com.stilog.analysevpi.controller.ComparisonController;
 import com.stilog.analysevpi.utils.SystemInfo;
 import com.stilog.analysevpi.view.documentation.DocumentationWindow;
 import com.stilog.analysevpi.view.loading.LoadingIcon;
 import com.stilog.analysevpi.view.loading.LoadingWindow;
 import com.stilog.analysevpi.view.object.VButton;
 import com.stilog.analysevpi.view.tree.VPITree;
+import com.stilog.vpimodel.objects.PositionFile;
 
 import java.awt.*;
 import java.awt.event.AdjustmentEvent;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * Pour compiler : javac InterfaceSwing_DoubleZone.java Pour exécuter : java
  * InterfaceSwing_DoubleZone
  */
-public class MainPage extends JFrame {
+public class ComparisonMainPage extends JPanel {
 	/*
 	 * CONSTANTS
 	 */
@@ -48,10 +48,11 @@ public class MainPage extends JFrame {
 	/*
 	 * VARIABLES
 	 */
-	private Controller controller;
+	private ComparisonController controller;
 
 	private SystemInfo infos = SystemInfo.getInstance();
 
+	private JFrame parentFrame;
 	/*
 	 * Zone VPI Gauche (Référence)
 	 */
@@ -92,13 +93,11 @@ public class MainPage extends JFrame {
 	private FontIcon generateFilesIconNormal;
 	private LoadingIcon generateFilesIconLoading;
 
-	public MainPage(Controller controller) {
-		super("VP Comparator");
-		this.setTitle(this.getTitle() + " (" + infos.getVersion() + ")");
+	public ComparisonMainPage(ComparisonController controller, JFrame parentFrame) {
 		this.controller = controller;
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(900, 600);
-		setLocationRelativeTo(null);
+		this.parentFrame = parentFrame;
+		
+		this.setLayout(new BorderLayout());
 
 		// Split pane horizontal (gauche / droite)
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -113,9 +112,9 @@ public class MainPage extends JFrame {
 		splitPane.setLeftComponent(leftPanel);
 		splitPane.setRightComponent(rightPanel);
 
-		getContentPane().add(createToolbarPanel(), BorderLayout.NORTH);
-		getContentPane().add(splitPane, BorderLayout.CENTER);
-		getContentPane().add(commonPanel, BorderLayout.SOUTH);
+		this.add(createToolbarPanel(), BorderLayout.NORTH);
+		this.add(splitPane, BorderLayout.CENTER);
+		this.add(commonPanel, BorderLayout.SOUTH);
 
 		this.initSynchro();
 		this.initializeDiffOnlyToggle();
@@ -167,7 +166,7 @@ public class MainPage extends JFrame {
 		// Browse action
 		browseBtn.addActionListener(e -> {
 			chooseVPIFile(isLeft);
-			LoadingWindow.run(this, () -> {
+			LoadingWindow.run(parentFrame, () -> {
 				processFile(isLeft);
 				if (isLeft) {
 					this.browseBtnRight.setEnabled(true);
@@ -189,7 +188,7 @@ public class MainPage extends JFrame {
 		panel.add(compareBtn, BorderLayout.CENTER);
 
 		compareBtn.addActionListener(e -> {
-			LoadingWindow.run(this, () -> {
+			LoadingWindow.run(parentFrame, () -> {
 				treeLeft.update(controller.performComparison(), diffOnlyBtn.isSelected());
 				diffOnlyBtn.setEnabled(true);
 			});
@@ -457,7 +456,7 @@ public class MainPage extends JFrame {
 			String outputPath = chooseVPIFolder();
 			// Vérifier que le bouton est activé
 			if (generateFilesBtn.isEnabled() && outputPath != null) {
-				LoadingWindow.run(this, () -> {
+				LoadingWindow.run(parentFrame, () -> {
 					controller.performGenerateVPI(outputPath);
 				});
 			}
@@ -494,12 +493,12 @@ public class MainPage extends JFrame {
 	}
 
 	
-	@Override
+	/*@Override
 	public void dispose() {
 		// Arrêter l'animation si elle est en cours
 		if (generateFilesIconLoading != null) {
 			generateFilesIconLoading.stop();
 		}
 		super.dispose();
-	}
+	}*/
 }

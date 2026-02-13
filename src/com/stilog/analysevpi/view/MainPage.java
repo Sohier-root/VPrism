@@ -287,7 +287,7 @@ public class MainPage extends JFrame {
 				});
 			}
 
-			setGenerateFilesButtonLoading(false);
+			//setGenerateFilesButtonLoading(false);
 			if (controller.getVPIData(PositionFile.RIGHT).isParsed()
 					&& controller.getVPIData(PositionFile.LEFT).isParsed()) {
 				this.compareBtn.setEnabled(true);

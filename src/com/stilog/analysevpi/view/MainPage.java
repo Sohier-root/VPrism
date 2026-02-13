@@ -11,6 +11,7 @@ import org.kordamp.ikonli.swing.FontIcon;
 import com.stilog.analysevpi.controller.Controller;
 import com.stilog.analysevpi.model.objects.PositionFile;
 import com.stilog.analysevpi.utils.SystemInfo;
+import com.stilog.analysevpi.view.documentation.DocumentationWindow;
 import com.stilog.analysevpi.view.loading.LoadingIcon;
 import com.stilog.analysevpi.view.loading.LoadingWindow;
 import com.stilog.analysevpi.view.object.VButton;
@@ -72,6 +73,7 @@ public class MainPage extends JFrame {
 	/*
 	 * Zone Sud
 	 */
+
 	private VButton compareBtn;
 
 	/*
@@ -80,6 +82,8 @@ public class MainPage extends JFrame {
 	private JToggleButton synchronizeBtn;
 	private JToggleButton diffOnlyBtn;
 	private JButton generateFilesBtn;
+
+	private JButton helpBtn;
 	private JButton reverseDatasBtn;
 	
 	/*
@@ -178,6 +182,7 @@ public class MainPage extends JFrame {
 		JPanel panel = new JPanel(new BorderLayout(8, 8));
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+
 		VButton compareBtn = new VButton("Comparer");
 		compareBtn.putClientProperty("JButton.buttonType", "roundRect");
 		compareBtn.setEnabled(false);
@@ -245,6 +250,7 @@ public class MainPage extends JFrame {
 					return;
 				}
 				// Appel vers fonction de traitement
+
 				treeLeft.update(controller.handleFile(leftSelectedFile, PositionFile.LEFT), diffOnlyBtn.isSelected());
 				diffOnlyBtn.setSelected(false);
 				diffOnlyBtn.setEnabled(false);
@@ -254,12 +260,13 @@ public class MainPage extends JFrame {
 							JOptionPane.WARNING_MESSAGE);
 					return;
 				}
+
 				// Désactiver le bouton generate et afficher l'icône de chargement
 				setGenerateFilesButtonLoading(true);
 
 				diffOnlyBtn.setSelected(false);
 				diffOnlyBtn.setEnabled(false);
-				
+
 				treeRight.update(controller.handleFile(rightSelectedFile, PositionFile.RIGHT),
 						diffOnlyBtn.isSelected());
 
@@ -279,7 +286,8 @@ public class MainPage extends JFrame {
 					});
 				});
 			}
-			
+
+			//setGenerateFilesButtonLoading(false);
 			if (controller.getVPIData(PositionFile.RIGHT).isParsed()
 					&& controller.getVPIData(PositionFile.LEFT).isParsed()) {
 				this.compareBtn.setEnabled(true);
@@ -316,6 +324,13 @@ public class MainPage extends JFrame {
 		toolbar.setFloatable(false); // Pour éviter le détachement moche
 		toolbar.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
+	    /*
+	     * Bouton Help (tout à gauche)
+	     */
+	    this.helpBtn = new JButton(FontIcon.of(MaterialDesign.MDI_HELP_CIRCLE, 20));
+	    this.helpBtn.setToolTipText("Aide et documentation");
+	    this.helpBtn.addActionListener(e -> openDocumentation());
+	    
 		/*
 		 * Boutton Synchro
 		 */
@@ -336,7 +351,7 @@ public class MainPage extends JFrame {
 		this.generateFilesBtn = new JButton(generateFilesIconNormal);
 		this.generateFilesBtn.setToolTipText(TOOLTIP_GENERATE_VPI);
 		this.generateFilesBtn.setEnabled(false); // Désactivé par défaut
-		
+
 		/*
 		 * Bouton Reverse
 		 */
@@ -346,6 +361,8 @@ public class MainPage extends JFrame {
 		/*
 		 * Ajout a la toolbar
 		 */
+		toolbar.add(helpBtn, BorderLayout.WEST);
+		toolbar.addSeparator();
 		toolbar.add(diffOnlyBtn, BorderLayout.CENTER);
 		toolbar.add(synchronizeBtn, BorderLayout.CENTER);
 		toolbar.add(generateFilesBtn, BorderLayout.CENTER);
@@ -433,7 +450,7 @@ public class MainPage extends JFrame {
 	        }
 	        treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
 		});
-	}
+			}
 
 	private void initializeGenerateFiles() {
 		this.generateFilesBtn.addActionListener(e -> {
@@ -467,6 +484,15 @@ public class MainPage extends JFrame {
 			this.rightSelectedFile = oldLeftFile;
 		});
 	}
+
+	/**
+	 * Ouvre la fenêtre de documentation
+	 */
+	private void openDocumentation() {
+	    DocumentationWindow docWindow = new DocumentationWindow();
+	    docWindow.setVisible(true);
+	}
+
 	
 	@Override
 	public void dispose() {

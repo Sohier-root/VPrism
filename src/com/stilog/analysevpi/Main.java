@@ -15,9 +15,9 @@ import com.stilog.analysevpi.view.MainPage;
 
 public class Main {
     public static void main(String[] args) {
-    	
+        
     	configureInterface();
-    	
+        
         SwingUtilities.invokeLater(() -> {
         	Model model = new Model();
         	Controller controller = new Controller(model);

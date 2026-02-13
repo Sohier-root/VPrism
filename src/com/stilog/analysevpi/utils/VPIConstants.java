@@ -55,7 +55,7 @@ public class VPIConstants {
 	public static final String PARAMETER_RESOURCEMODEL = "Dimension";
 	public static final String PARAMETER_TYPE = "Type";
 	public static final String PARAMETER_HEADING = "Heading";
-	public static final String PARAMETER_KEY = "Rubrique unique";
+	public static final String PARAMETER_KEY = "Cle";
 	public static final String PARAMETER_KEY_PARENT = "Cle parent";
 	public static final String PARAMETER_KEYHEADINGS = "Rubrique d'identification";
 	public static final String PARAMETER_LABELSHEADINGS = "Rubriques d'affichage";

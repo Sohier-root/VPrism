@@ -2,7 +2,7 @@ package com.stilog.analysevpi.model;
 
 import java.io.File;
 
-import com.stilog.vpimodel.objects.PositionFile;
+import com.stilog.vpimodel.objects.TypeFile;
 import com.stilog.vpimodel.objects.VPIDatas;
 
 public class ComparisonModel {
@@ -10,9 +10,9 @@ public class ComparisonModel {
 	private VPIDatas gauche = new VPIDatas();
 	private VPIDatas droite = new VPIDatas();
 	
-	public void processFile(File file, PositionFile position) {
+	public void processFile(File file, TypeFile position) {
 		getData(position).computeDatas(file, position);
-		if(position == PositionFile.RIGHT) {
+		if(position == TypeFile.COMPARISON_RIGHT) {
 			gauche.reset();
 		}
 	}
@@ -20,11 +20,11 @@ public class ComparisonModel {
 	/*
 	 * GETTER & SETTER
 	 */
-	public VPIDatas getData(PositionFile position) {
+	public VPIDatas getData(TypeFile position) {
 		switch(position) {
-		case LEFT:
+		case COMPARISON_LEFT:
 			return gauche;
-		case RIGHT:
+		case COMPARISON_RIGHT:
 			return droite;
 		default:
 			return null;

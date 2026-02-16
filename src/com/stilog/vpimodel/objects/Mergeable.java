@@ -22,7 +22,7 @@ public abstract class Mergeable extends Resolveable {
 	 */
 	private boolean mergeable = false; //L'objet est-il ajoutable au VPI
 	private boolean replaceable = false; //L'objet est-il remplacable dans le VPI
-	private boolean editableName = true; //Le nom de l'objet peu-il etre modifié
+	private boolean editableName = true; //Le nom de l'objet peut-il etre modifié
 	
 	public Map<String, String> getUniqueAttributes() {
 		return uniqueAttributes;

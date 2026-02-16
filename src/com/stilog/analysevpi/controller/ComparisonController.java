@@ -9,7 +9,7 @@ import com.stilog.analysevpi.model.dto.MergeRequest;
 import com.stilog.analysevpi.utils.AsyncDecompressor;
 import com.stilog.vpimodel.objects.Entity;
 import com.stilog.vpimodel.objects.Parameters;
-import com.stilog.vpimodel.objects.PositionFile;
+import com.stilog.vpimodel.objects.TypeFile;
 import com.stilog.vpimodel.objects.VPIDatas;
 import com.stilog.vpimodel.vpsettings.FileDatas;
 
@@ -21,11 +21,11 @@ public class ComparisonController {
 		this.model = model;
 	}
 	
-	public VPIDatas handleFile(File file, PositionFile position) {
+	public VPIDatas handleFile(File file, TypeFile position) {
 		model.processFile(file, position);
 		
 		// Si c'est le fichier de droite, lancer le dézipage complet en arrière-plan
-		if (position == PositionFile.RIGHT) {
+		if (position == TypeFile.COMPARISON_RIGHT) {
 			startCompleteUnzip(file, position);
 		}
 		
@@ -36,9 +36,9 @@ public class ComparisonController {
 	 * Lance le dézipage complet du fichier en arrière-plan (non bloquant)
 	 * @param file Le fichier VPI/VPS à dézipper
 	 */
-	private void startCompleteUnzip(File file, PositionFile position) {
+	private void startCompleteUnzip(File file, TypeFile position) {
 		String vpiPath = file.getAbsolutePath();
-		String outputDir = System.getProperty("java.io.tmpdir") + "vpcompare/" + (position == PositionFile.LEFT?"ref/":"tested/");
+		String outputDir = System.getProperty("java.io.tmpdir") + "vpcompare/" + (position == TypeFile.COMPARISON_LEFT?"ref/":"tested/");
 		
 		AsyncDecompressor.dezipperAsync(
 			vpiPath, 
@@ -57,19 +57,19 @@ public class ComparisonController {
 	 * @param file Le fichier à dézipper
 	 * @return CompletableFuture<Boolean> qui se termine quand la décompression est finie
 	 */
-	public CompletableFuture<Boolean> getCompleteUnzipFuture(File file, PositionFile position) {
+	public CompletableFuture<Boolean> getCompleteUnzipFuture(File file, TypeFile position) {
 		String vpiPath = file.getAbsolutePath();
-		String outputDir = System.getProperty("java.io.tmpdir") + "vpcompare/" + (position == PositionFile.LEFT?"ref/":"tested/");
+		String outputDir = System.getProperty("java.io.tmpdir") + "vpcompare/" + (position == TypeFile.COMPARISON_LEFT?"ref/":"tested/");
 		return AsyncDecompressor.dezipperAsync(vpiPath, outputDir);
 	}
 	
-	public VPIDatas getVPIData(PositionFile position) {
+	public VPIDatas getVPIData(TypeFile position) {
 		return model.getData(position);
 	}
 	
 	public VPIDatas performComparison() {
 		VPIComparator.compare(model);
-		return model.getData(PositionFile.LEFT);
+		return model.getData(TypeFile.COMPARISON_LEFT);
 	}
 	
 	public void performReverse() {
@@ -120,7 +120,7 @@ public class ComparisonController {
 	
 	private VPIDatas mergeParameter(FileDatas file, Entity entity, Parameters parameter,
 			Parameters parameterToReplace) throws Exception {
-		VPIDatas rightDatas = model.getData(PositionFile.RIGHT);
+		VPIDatas rightDatas = model.getData(TypeFile.COMPARISON_RIGHT);
 
 		if (rightDatas == null) {
 			throw new IllegalStateException("Aucune donnée RIGHT disponible pour le merge");
@@ -131,7 +131,7 @@ public class ComparisonController {
 	}
 
 	private VPIDatas mergeEntity(FileDatas file, Entity entity, Entity entityToReplace) throws Exception {
-		VPIDatas rightDatas = model.getData(PositionFile.RIGHT);
+		VPIDatas rightDatas = model.getData(TypeFile.COMPARISON_RIGHT);
 
 		if (rightDatas == null) {
 			throw new IllegalStateException("Aucune donnée RIGHT disponible pour le merge");
@@ -142,6 +142,6 @@ public class ComparisonController {
 	}
 
 	public void performGenerateVPI(String outputPath) {
-		this.model.getData(PositionFile.RIGHT).generateMergedFiles(outputPath);
+		this.model.getData(TypeFile.COMPARISON_RIGHT).generateMergedFiles(outputPath);
 	}
 }

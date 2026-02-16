@@ -15,6 +15,7 @@ import com.stilog.analysevpi.utils.MethodUtil;
 import com.stilog.analysevpi.utils.VPIConstants;
 import com.stilog.vpimodel.objects.Entity;
 import com.stilog.vpimodel.objects.Parameters;
+import com.stilog.vpimodel.objects.TypeData;
 
 public class ResourceModel extends FileDatas{
 
@@ -46,6 +47,7 @@ public class ResourceModel extends FileDatas{
 		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
 		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
 		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+		entity.setTypeData(TypeData.DIMENSION);
 		
 		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, id, entity.getName());
 		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, uid, entity.getName());

@@ -3,6 +3,7 @@ package com.stilog.vpimodel.objects;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 import com.stilog.analysevpi.utils.MethodUtil;
 import com.stilog.analysevpi.utils.VPIConstants;
@@ -12,6 +13,8 @@ public class Entity extends Mergeable{
 	private int id;
 	private String name;
 	List<Parameters> parameters = new ArrayList<>();
+	
+	private TypeData typeData;
 	
 	public Entity(int id, String name) {
 		this.id = id;
@@ -129,9 +132,34 @@ public class Entity extends Mergeable{
 		return builder.toString();
 	}
 	
+	public TypeData getTypeData() {
+		return typeData;
+	}
+
+	public void setTypeData(TypeData typeData) {
+		this.typeData = typeData;
+	}
+	
 	@Override
 	public String toString() {
 		return "Entity [name=" + name + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(name);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Entity other = (Entity) obj;
+		return Objects.equals(name, other.name);
 	}
 	
 }

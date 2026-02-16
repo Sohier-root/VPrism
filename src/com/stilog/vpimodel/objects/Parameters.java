@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.stilog.analysevpi.utils.VPIConstants;
+
 public class Parameters extends Mergeable{
 
 	private String name;
@@ -44,7 +46,7 @@ public class Parameters extends Mergeable{
 			if(attr.getKey().equals(key))
 				return attr.getValue();
 		}
-		return null;
+		return "";
 	}
 
 	public void setResolve(boolean resolve) {

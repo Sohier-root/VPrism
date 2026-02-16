@@ -8,15 +8,15 @@ import com.stilog.analysevpi.utils.VPIConstants;
 import com.stilog.vpimodel.objects.Attribute;
 import com.stilog.vpimodel.objects.Entity;
 import com.stilog.vpimodel.objects.Parameters;
-import com.stilog.vpimodel.objects.PositionFile;
+import com.stilog.vpimodel.objects.TypeFile;
 import com.stilog.vpimodel.objects.VPIDatas;
 import com.stilog.vpimodel.vpsettings.FileDatas;
 
 public class VPIComparator {
 
 	public static void compare(ComparisonModel model) {
-		VPIDatas ref = model.getData(PositionFile.LEFT);
-		VPIDatas tested = model.getData(PositionFile.RIGHT);
+		VPIDatas ref = model.getData(TypeFile.COMPARISON_LEFT);
+		VPIDatas tested = model.getData(TypeFile.COMPARISON_RIGHT);
 		try {
 			/*
 			 * Scan de toutes les données à comparer

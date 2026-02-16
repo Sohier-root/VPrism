@@ -15,7 +15,7 @@ import com.stilog.analysevpi.view.loading.LoadingIcon;
 import com.stilog.analysevpi.view.loading.LoadingWindow;
 import com.stilog.analysevpi.view.object.VButton;
 import com.stilog.analysevpi.view.tree.VPITree;
-import com.stilog.vpimodel.objects.PositionFile;
+import com.stilog.vpimodel.objects.TypeFile;
 
 import java.awt.*;
 import java.awt.event.AdjustmentEvent;
@@ -250,7 +250,7 @@ public class ComparisonMainPage extends JPanel {
 				}
 				// Appel vers fonction de traitement
 
-				treeLeft.update(controller.handleFile(leftSelectedFile, PositionFile.LEFT), diffOnlyBtn.isSelected());
+				treeLeft.update(controller.handleFile(leftSelectedFile, TypeFile.COMPARISON_LEFT), diffOnlyBtn.isSelected());
 				diffOnlyBtn.setSelected(false);
 				diffOnlyBtn.setEnabled(false);
 			} else {
@@ -266,14 +266,14 @@ public class ComparisonMainPage extends JPanel {
 				diffOnlyBtn.setSelected(false);
 				diffOnlyBtn.setEnabled(false);
 
-				treeRight.update(controller.handleFile(rightSelectedFile, PositionFile.RIGHT),
+				treeRight.update(controller.handleFile(rightSelectedFile, TypeFile.COMPARISON_RIGHT),
 						diffOnlyBtn.isSelected());
 
-				treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
+				treeLeft.update(controller.getVPIData(TypeFile.COMPARISON_LEFT), diffOnlyBtn.isSelected());
 
 				// Récupérer le CompletableFuture pour savoir quand le dézipage est terminé
 				CompletableFuture<Boolean> unzipFuture = controller.getCompleteUnzipFuture(rightSelectedFile,
-						PositionFile.RIGHT);
+						TypeFile.COMPARISON_RIGHT);
 
 				// Quand le dézipage est terminé, réactiver le bouton
 				unzipFuture.thenAccept(success -> {
@@ -287,8 +287,8 @@ public class ComparisonMainPage extends JPanel {
 			}
 
 			//setGenerateFilesButtonLoading(false);
-			if (controller.getVPIData(PositionFile.RIGHT).isParsed()
-					&& controller.getVPIData(PositionFile.LEFT).isParsed()) {
+			if (controller.getVPIData(TypeFile.COMPARISON_RIGHT).isParsed()
+					&& controller.getVPIData(TypeFile.COMPARISON_LEFT).isParsed()) {
 				this.compareBtn.setEnabled(true);
 			}
 		} catch (Exception e) {
@@ -447,7 +447,7 @@ public class ComparisonMainPage extends JPanel {
 	        	diffOnlyBtn.setToolTipText(TOOLTIP_DISPLAY_DIFFONLY);
 	        	diffOnlyBtn.setSelected(false);
 	        }
-	        treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
+	        treeLeft.update(controller.getVPIData(TypeFile.COMPARISON_LEFT), diffOnlyBtn.isSelected());
 		});
 			}
 
@@ -470,8 +470,8 @@ public class ComparisonMainPage extends JPanel {
 			
 			//Datas and trees
 			controller.performReverse();
-			treeLeft.update(controller.getVPIData(PositionFile.LEFT), diffOnlyBtn.isSelected());
-			treeRight.update(controller.getVPIData(PositionFile.RIGHT), diffOnlyBtn.isSelected());
+			treeLeft.update(controller.getVPIData(TypeFile.COMPARISON_LEFT), diffOnlyBtn.isSelected());
+			treeRight.update(controller.getVPIData(TypeFile.COMPARISON_RIGHT), diffOnlyBtn.isSelected());
 			
 			//File
 			String oldLeft = this.leftFileField.getText();

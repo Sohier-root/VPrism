@@ -249,11 +249,17 @@ public class ExcelTemplateServiceImpl implements ExcelTemplateService {
             return styleInfo;
         }
         
-        // Couleur de fond
-        if (cellStyle.getFillForegroundColorColor() instanceof XSSFColor) {
+     // Couleur de fond
+        if (cellStyle.getFillPattern() != FillPatternType.NO_FILL
+                && cellStyle.getFillForegroundColorColor() instanceof XSSFColor) {
+
             XSSFColor bgColor = (XSSFColor) cellStyle.getFillForegroundColorColor();
-            if (bgColor != null && bgColor.getARGBHex() != null) {
-                styleInfo.setBackgroundColor(bgColor.getARGBHex().substring(2));
+
+            if (bgColor != null) {
+                String hex = resolveColor(bgColor, (XSSFWorkbook) cell.getSheet().getWorkbook());
+                if (hex != null) {
+                    styleInfo.setBackgroundColor(hex);
+                }
             }
         }
         
@@ -324,5 +330,105 @@ public class ExcelTemplateServiceImpl implements ExcelTemplateService {
         }*/
         
         return styleInfo;
+    }
+    
+    /**
+     * Résout la vraie couleur RGB en tenant compte du thème et de la teinte
+     */
+    private String resolveColor(XSSFColor color, XSSFWorkbook workbook) {
+        if (color == null) return null;
+
+        byte[] rgb = null;
+
+        // Cas 1 : couleur de thème → résoudre depuis le thème du workbook
+        if (color.getTheme() > 0) {
+            XSSFColor themeColor = workbook.getTheme().getThemeColor(color.getTheme());
+            if (themeColor != null && themeColor.getRGB() != null) {
+                rgb = themeColor.getRGB().clone();
+            }
+        }
+
+        // Cas 2 : couleur RGB directe
+        if (rgb == null && color.getRGB() != null) {
+            rgb = color.getRGB().clone();
+        }
+
+        if (rgb == null) return null;
+
+        // Appliquer la teinte manuellement
+        double tint = color.getTint();
+        if (tint != 0.0) {
+            rgb = applyTint(rgb, tint);
+        }
+
+        return String.format("%02X%02X%02X",
+                Byte.toUnsignedInt(rgb[0]),
+                Byte.toUnsignedInt(rgb[1]),
+                Byte.toUnsignedInt(rgb[2]));
+    }
+
+    /**
+     * Applique une teinte sur une couleur RGB selon la spec OOXML
+     * tint > 0 : éclaircit, tint < 0 : assombrit
+     */
+    private byte[] applyTint(byte[] rgb, double tint) {
+        // Convertir RGB → HLS
+        double r = Byte.toUnsignedInt(rgb[0]) / 255.0;
+        double g = Byte.toUnsignedInt(rgb[1]) / 255.0;
+        double b = Byte.toUnsignedInt(rgb[2]) / 255.0;
+
+        double max = Math.max(r, Math.max(g, b));
+        double min = Math.min(r, Math.min(g, b));
+        double l = (max + min) / 2.0;
+        double s, h;
+
+        if (max == min) {
+            h = s = 0.0;
+        } else {
+            double d = max - min;
+            s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
+            if (max == r)      h = (g - b) / d + (g < b ? 6 : 0);
+            else if (max == g) h = (b - r) / d + 2;
+            else               h = (r - g) / d + 4;
+            h /= 6.0;
+        }
+
+        // Appliquer la teinte sur L selon spec OOXML
+        if (tint < 0) {
+            l = l * (1.0 + tint);
+        } else {
+            l = l * (1.0 - tint) + tint;
+        }
+
+        // Convertir HLS → RGB
+        double[] result = hslToRgb(h, s, l);
+
+        return new byte[]{
+            (byte) Math.round(result[0] * 255),
+            (byte) Math.round(result[1] * 255),
+            (byte) Math.round(result[2] * 255)
+        };
+    }
+
+    private double[] hslToRgb(double h, double s, double l) {
+        if (s == 0.0) {
+            return new double[]{l, l, l};
+        }
+        double q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        double p = 2 * l - q;
+        return new double[]{
+            hueToRgb(p, q, h + 1.0 / 3),
+            hueToRgb(p, q, h),
+            hueToRgb(p, q, h - 1.0 / 3)
+        };
+    }
+
+    private double hueToRgb(double p, double q, double t) {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1.0 / 6) return p + (q - p) * 6 * t;
+        if (t < 1.0 / 2) return q;
+        if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
+        return p;
     }
 }

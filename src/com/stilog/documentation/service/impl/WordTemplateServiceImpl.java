@@ -153,6 +153,11 @@ public class WordTemplateServiceImpl implements WordTemplateService {
     
     @Override
     public void saveDocument(XWPFDocument document, String outputPath) {
+    	//Ecraser le fichier si il existe deja
+    	File file = new File(outputPath);
+    	if(file.exists())
+    		file.delete();
+    	
         try (FileOutputStream fos = new FileOutputStream(outputPath)) {
             document.write(fos);
             document.close();

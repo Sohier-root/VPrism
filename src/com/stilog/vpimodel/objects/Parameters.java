@@ -15,6 +15,7 @@ public class Parameters extends Mergeable{
 	private String name;
 	private String uid;
 	private List<Attribute> attributes = new ArrayList<>();
+	private List<Attribute> hiddenAttributes = new ArrayList<>();
 	
 	public Parameters(String name) {
 		this.name = name;
@@ -46,6 +47,12 @@ public class Parameters extends Mergeable{
 			if(attr.getKey().equals(key))
 				return attr.getValue();
 		}
+		
+		for(Attribute attr : hiddenAttributes) {
+			if(attr.getKey().equals(key))
+				return attr.getValue();
+		}
+		
 		return "";
 	}
 
@@ -71,6 +78,10 @@ public class Parameters extends Mergeable{
 
 	public List<Attribute> getAttributes() {
 		return attributes;
+	}
+	
+	public void addHiddenAttributes(String key, String value) {
+		this.hiddenAttributes.add(new Attribute(key, value));
 	}
 
 	public String getUid() {

@@ -13,11 +13,14 @@ import java.util.List;
 import com.stilog.analysevpi.utils.Compressor;
 import com.stilog.analysevpi.utils.Decompressor;
 import com.stilog.analysevpi.utils.VPIConstants;
+import com.stilog.vpimodel.vpsettings.CreationRule;
+import com.stilog.vpimodel.vpsettings.DailyCalendar;
 import com.stilog.vpimodel.vpsettings.FileDatas;
 import com.stilog.vpimodel.vpsettings.Filter;
 import com.stilog.vpimodel.vpsettings.Hierarchies;
 import com.stilog.vpimodel.vpsettings.ImportExport;
 import com.stilog.vpimodel.vpsettings.ResourceModel;
+import com.stilog.vpimodel.vpsettings.TreeStruct;
 
 public class VPIDatas {
 
@@ -35,6 +38,10 @@ public class VPIDatas {
 	Filter resourceFilter, eventFilter;
 	ImportExport exportResources, exportEvents, importResources, importEvents;
 	Hierarchies hierarchies;
+	
+	DailyCalendar calendar;
+	CreationRule creationRule;
+	TreeStruct treeStruct;
 	
 	public VPIDatas() {
 		this.name = "VPI Datas";
@@ -93,8 +100,21 @@ public class VPIDatas {
 		File filesDir = new File(outputDir);
 		
 		/*
-		 * Parse des dimensions avant tout pour correspondances
+		 * Parse des fichiers prioritaire pour correspondances
 		 */
+		//Calendrier
+		calendar = new DailyCalendar(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_DAILY_CALENDAR, VPIConstants.NAME_TREE_DAILYCALENDAR);
+		calendar.parseDatas();
+		
+		//Regle de création d'événement
+		creationRule = new CreationRule(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_CREATION_RULE, VPIConstants.NAME_TREE_CREATIONRULE);
+		creationRule.parseDatas();
+		
+		//Regle de création d'événement
+		treeStruct = new TreeStruct(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_TREE_STRUCT, VPIConstants.NAME_TREE_TREESTRUCT);
+		treeStruct.parseDatas();
+		
+		//Dimension
 		resourceModel = new ResourceModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_RESOURCE_MODEL, VPIConstants.NAME_TREE_RESOURCESMODEL);
 		resourceModel.parseDatas();
 		
@@ -142,6 +162,11 @@ public class VPIDatas {
 					case VPIConstants.FILENAME_EVENTS_STRUCT:
 						hierarchies = new Hierarchies(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSSTRUCT);
 						hierarchies.parseDatas();
+						break;
+						
+					case VPIConstants.FILENAME_DAILY_CALENDAR:
+						calendar = new DailyCalendar(file.getAbsolutePath(), VPIConstants.NAME_TREE_DAILYCALENDAR);
+						calendar.parseDatas();
 						break;
 				}
 			}
@@ -198,7 +223,8 @@ public class VPIDatas {
 	    	if (FileDatas.class.isAssignableFrom(field.getType())) {
 	    		try {
 	    		field.setAccessible(true);
-	    	    result.add((FileDatas) field.get(this));
+	    		if(!((FileDatas) field.get(this)).isHidden())
+	    			result.add((FileDatas) field.get(this));
 	    		}
 	    		catch(Exception e) {e.printStackTrace();}
 	    	}

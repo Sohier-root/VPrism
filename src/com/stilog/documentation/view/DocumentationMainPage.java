@@ -22,8 +22,8 @@ import com.stilog.documentation.controller.DocumentationModelController;
 import com.stilog.documentation.controller.DocumentationTemplateController;
 import com.stilog.documentation.model.DocumentationModel;
 import com.stilog.documentation.model.dto.DocumentProcessingRequest;
-import com.stilog.view.tree.CheckBoxTree;
-import com.stilog.view.tree.CheckBoxTreeNode;
+import com.stilog.documentation.view.tree.CheckBoxTree;
+import com.stilog.documentation.view.tree.CheckBoxTreeNode;
 import com.stilog.vpimodel.objects.Entity;
 import com.stilog.vpimodel.objects.Parameters;
 

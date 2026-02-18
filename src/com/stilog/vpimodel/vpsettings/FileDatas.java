@@ -42,6 +42,8 @@ public abstract class FileDatas extends Resolveable{
 	File file;
 	List<Entity> entities = new ArrayList<>();
 	
+	private boolean hidden = false;
+	
 	public FileDatas(String filePath, String name) {
 		super();
 		this.file = new File(filePath);
@@ -234,6 +236,14 @@ public abstract class FileDatas extends Resolveable{
 		return builder.toString();
 	}
 	
+	public boolean isHidden() {
+		return hidden;
+	}
+
+	public void setHidden(boolean hidden) {
+		this.hidden = hidden;
+	}
+
 	@Override
 	public String toString() {
 		return "FileDatas [name=" + name + "]";

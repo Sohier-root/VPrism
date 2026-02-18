@@ -1,4 +1,4 @@
-package com.stilog.view.tree;
+package com.stilog.documentation.view.tree;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -69,7 +69,7 @@ public class CheckBoxTree extends JTree {
 
 			for (int i = 0; i < datasFiles.size(); i++) {
 				FileDatas fileDatas = datasFiles.get(i);
-				if (fileDatas == null)
+				if (fileDatas == null || fileDatas.getEntities().isEmpty())
 					continue;
 				fileDatas.sort();
 				DefaultMutableTreeNode fileNode = computeFileNode(fileDatas);
@@ -89,10 +89,18 @@ public class CheckBoxTree extends JTree {
 		DefaultMutableTreeNode datasNode = new DefaultMutableTreeNode(datas);
 
 		for (Entity entity : datas.getEntities()) {
-			CheckBoxTreeNode entityNode = new CheckBoxTreeNode(entity);
+			DefaultMutableTreeNode entityNode = null;
+			if(entity.isDocumentable())
+				entityNode = new CheckBoxTreeNode(entity);
+			else
+				entityNode = new DefaultMutableTreeNode(entity);
 
 			for (Parameters param : entity.getParameters()) {
-				CheckBoxTreeNode paramNode = new CheckBoxTreeNode(param);
+				DefaultMutableTreeNode paramNode = null;
+				if(param.isDocumentable())
+					paramNode = new CheckBoxTreeNode(param);
+				else
+					paramNode = new DefaultMutableTreeNode(param);
 
 				for (Attribute attr : param.getAttributes()) {
 					DefaultMutableTreeNode attributeNode = new DefaultMutableTreeNode(attr);
@@ -144,7 +152,7 @@ public class CheckBoxTree extends JTree {
 	            }
 	            
 	            // Le parent est coché seulement si tous les enfants le sont
-	            parent.setSelected(allSelected);
+	            parent.setSelected(anySelected);
 	            
 	            // Remonter récursivement
 	            updateParent(parent);

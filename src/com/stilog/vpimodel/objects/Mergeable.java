@@ -24,6 +24,11 @@ public abstract class Mergeable extends Resolveable {
 	private boolean replaceable = false; //L'objet est-il remplacable dans le VPI
 	private boolean editableName = true; //Le nom de l'objet peut-il etre modifié
 	
+	/*
+	 * Peux etre documentable
+	 */
+	private boolean documentable = true;
+	
 	public Map<String, String> getUniqueAttributes() {
 		return uniqueAttributes;
 	}
@@ -108,5 +113,13 @@ public abstract class Mergeable extends Resolveable {
 
 	public void setParentTag(String parentTag) {
 		this.parentTag = "<" + parentTag + ">";
+	}
+
+	public boolean isDocumentable() {
+		return documentable;
+	}
+
+	public void setDocumentable(boolean documentable) {
+		this.documentable = documentable;
 	}
 }

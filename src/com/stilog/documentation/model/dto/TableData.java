@@ -40,9 +40,18 @@ public class TableData {
     public List<List<String>> getData() { return data; }
     public void setData(List<List<String>> data) { this.data = data; }
     public void setData(String name, String value) {
+    	this.setData(name, value, 0);
+    }
+    public void setData(String name, String value, int index) {
     	for(List<String> datas : data) {
     		if(datas.contains(name)) {
+    			if(index <= 0) {
     			datas.set(datas.size()-1, value);
+    			return;
+    			}
+    			else {
+    				index --;
+    			}
     		}
     	}
     }

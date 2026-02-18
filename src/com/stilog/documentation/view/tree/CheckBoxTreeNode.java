@@ -1,4 +1,4 @@
-package com.stilog.view.tree;
+package com.stilog.documentation.view.tree;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 

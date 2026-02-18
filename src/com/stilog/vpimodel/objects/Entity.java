@@ -13,6 +13,8 @@ public class Entity extends Mergeable{
 	private int id;
 	private String name;
 	List<Parameters> parameters = new ArrayList<>();
+
+	private List<Attribute> hiddenAttributes = new ArrayList<>();
 	
 	private TypeData typeData;
 	
@@ -112,6 +114,9 @@ public class Entity extends Mergeable{
 	}
 	
 	public void sort() {
+		if(parameters == null)
+			return;
+		
 		parameters.sort(Comparator.comparing(Parameters::getName));
 		
 		for(Parameters attr : parameters) {
@@ -138,6 +143,19 @@ public class Entity extends Mergeable{
 
 	public void setTypeData(TypeData typeData) {
 		this.typeData = typeData;
+	}
+	
+	public void addHiddenAttributes(String key, String value) {
+		this.hiddenAttributes.add(new Attribute(key, value));
+	}
+	
+	public String getHiddenAttributeValue(String key) {
+		for(Attribute attr : hiddenAttributes) {
+			if(attr.getKey().equals(key))
+				return attr.getValue();
+		}
+		
+		return "";
 	}
 	
 	@Override

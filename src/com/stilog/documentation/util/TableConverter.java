@@ -47,8 +47,12 @@ public class TableConverter {
             List<String> rowData = data.get(i);
             
             for (int j = 0; j < cols && j < rowData.size(); j++) {
-                XWPFTableCell cell = row.getCell(j);
-                cell.setText(rowData.get(j) != null ? rowData.get(j) : "");
+            	XWPFTableCell cell = row.getCell(j);
+                String cellValue = rowData.get(j);
+                if(i == 0)
+                	cellValue = cellValue.replaceAll("Colonne\\d+", "");
+                
+                setCellText(cell, cellValue);
                 
                 // Appliquer le style de la cellule
                 CellStyleInfo cellStyle = tableData.getCellStyle(i, j);
@@ -59,6 +63,28 @@ public class TableConverter {
         }
         
         return table;
+    }
+    
+    private static void setCellText(XWPFTableCell cell, String value) {
+        // Valeur à afficher (jamais null)
+        String displayValue = (value != null) ? value : "";
+        
+        // Récupérer le premier paragraphe de la cellule
+        XWPFParagraph paragraph;
+        if (cell.getParagraphs().isEmpty()) {
+            paragraph = cell.addParagraph();
+        } else {
+            paragraph = cell.getParagraphs().get(0);
+        }
+        
+        // Supprimer les runs existants
+        int runCount = paragraph.getRuns().size();
+        for (int i = runCount - 1; i >= 0; i--) {
+            paragraph.removeRun(i);
+        }
+
+        XWPFRun run = paragraph.createRun();
+        run.setText(displayValue, 0); // ← Le "0" force l'insertion à la position 0
     }
     
     /**

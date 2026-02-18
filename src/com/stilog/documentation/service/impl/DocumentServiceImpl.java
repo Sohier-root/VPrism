@@ -6,6 +6,7 @@ import com.stilog.documentation.model.dto.*;
 import com.stilog.documentation.exception.*;
 import com.stilog.documentation.util.ExcelDocumentUtil;
 import com.stilog.documentation.util.TableConverter;
+import com.stilog.documentation.util.WordDocumentUtil;
 import com.stilog.vpimodel.objects.Entity;
 import com.stilog.vpimodel.objects.Parameters;
 
@@ -43,6 +44,9 @@ public class DocumentServiceImpl implements DocumentService {
             
             // 2. Extraire les tableaux depuis Excel
             Map<String, TableData> dimensionTables = excelTemplateService.extractTables(EXCEL_TEMPLATE_PATH, ExcelDocumentUtil.DIMENSION_SHEET);
+            Map<String, TableData> formulaireTables = excelTemplateService.extractTables(EXCEL_TEMPLATE_PATH, ExcelDocumentUtil.DIMENSION_SHEET);
+            Map<String, TableData> hierarchieTables = excelTemplateService.extractTables(EXCEL_TEMPLATE_PATH, ExcelDocumentUtil.DIMENSION_SHEET);
+            Map<String, TableData> filtreTables = excelTemplateService.extractTables(EXCEL_TEMPLATE_PATH, ExcelDocumentUtil.DIMENSION_SHEET);
             
             if (dimensionTables.isEmpty()) {
                 throw new TableExtractionException("Aucun tableau trouvé dans le fichier Excel");
@@ -56,8 +60,8 @@ public class DocumentServiceImpl implements DocumentService {
             	case DIMENSION :
             		List<TableData> resultTableList = DimensionTableWriter.fillTables(dimensionTables, entity, parameters);
             		List<String> titleList = new ArrayList<>();
-            		titleList.add("PARAMÉTRAGE NÉCÉSSAIRE");
-            		titleList.add("Dimension");
+            		titleList.add(WordDocumentUtil.TITLE_1_PARAMETRAGE);
+            		titleList.add(WordDocumentUtil.TITLE_2_DIMENSION);
             		titleList.add(entity.getName());
             		for(TableData table : resultTableList) {
             			wordTemplateService.insertTable(wordDocument, table, titleList);

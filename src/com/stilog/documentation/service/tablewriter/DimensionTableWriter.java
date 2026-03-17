@@ -122,6 +122,7 @@ public class DimensionTableWriter {
 		template.setData(ExcelDocumentUtil.RUB_VAL_DEFAUT, param.getAttributeValue(VPIConstants.PARAMETER_DEFAULT_VAL));
 		template.setData(ExcelDocumentUtil.RUB_INT_VAL_DEFAUT, param.getAttributeValue(VPIConstants.PARAMETER_FORBIDDEN_DEFAULT_VAL));
 		template.setData(ExcelDocumentUtil.RUB_FORMAT, param.getAttributeValue(VPIConstants.PARAMETER_PATTERN));
+		template.setData(ExcelDocumentUtil.RUB_LENGHT, param.getAttributeValue(VPIConstants.PARAMETER_LENGHT));
 		
 		return template;
 	}

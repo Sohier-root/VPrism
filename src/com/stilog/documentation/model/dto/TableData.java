@@ -72,12 +72,24 @@ public class TableData {
     }
     
     public TableData clone() {
-    	TableData clone = new TableData(this.getTableName(), new ArrayList<>(this.data));
-    	clone.setCellStyles(new ArrayList<>(this.cellStyles));
-    	clone.setStyleInfo(this.styleInfo);
-    	clone.setRowCount(rowCount);
-    	clone.setColumnCount(columnCount);
-    	
-    	return clone;
+        // Deep copy de data
+        List<List<String>> newDatas = new ArrayList<>();
+        for (List<String> row : this.data) {
+            newDatas.add(new ArrayList<>(row));
+        }
+
+        // Deep copy de cellStyles
+        List<List<CellStyleInfo>> newCellStyles = new ArrayList<>();
+        for (List<CellStyleInfo> row : this.cellStyles) {
+            newCellStyles.add(new ArrayList<>(row));
+        }
+
+        TableData clone = new TableData(this.getTableName(), newDatas);
+        clone.setCellStyles(newCellStyles);
+        clone.setStyleInfo(this.styleInfo);
+        clone.setRowCount(this.rowCount);
+        clone.setColumnCount(this.columnCount);
+
+        return clone;
     }
 }

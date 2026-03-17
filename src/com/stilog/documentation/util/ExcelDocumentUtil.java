@@ -38,6 +38,7 @@ public class ExcelDocumentUtil {
 	public static final String RUB_INT_VAL_DEFAUT = "Interdire la valeur par défaut";
 	public static final String RUB_NB_CARAC = "Nombre de caractère";
 	public static final String RUB_FORMAT = "Format";
+	public static final String RUB_LENGHT = "Nombre de caractère";
 	public static final String RUB_KEYS = "Rubriques uniques";
 	public static final String RUB_KEYS_HEADINGS = "Rubriques d'identification";
 	public static final String RUB_MANDATORY = "Rubriques obligatoires";

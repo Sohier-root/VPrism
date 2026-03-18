@@ -5,6 +5,7 @@ import java.awt.Component;
 
 import javax.swing.JLabel;
 import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
@@ -46,7 +47,7 @@ public class CustomTreeCellRenderer extends DefaultTreeCellRenderer{
             	else
             		c.setForeground(ANOMALY_COLOR);
             } else {
-                c.setForeground(Color.BLACK);
+                c.setForeground(UIManager.getColor("Tree.foreground"));
             }
         }
         

@@ -12,7 +12,6 @@ public class VPIConstants {
 	public static final String FILENAME_EVENTS_STRUCT = "eventtreestruct.txt";
 	public static final String FILENAME_DAILY_CALENDAR = "dailycalendar.txt";
 	public static final String FILENAME_CREATION_RULE = "eventcreationrule.txt";
-	public static final String FILENAME_TREE_STRUCT = "eventtreestruct.txt";
 	
 	
 	/*
@@ -69,6 +68,8 @@ public class VPIConstants {
 	public static final String XML_TAG_TREESTRUCT = "eventTreeStruct";
 	public static final String XML_TAG_CALENDAR = "dailyCalendar";
 	public static final String XML_TAG_CREATION_RULE = "eventCreationRule";
+	public static final String XML_TAG_FILTER_RESOURCE = "filterResource";
+	public static final String XML_TAG_FILTER_EVENT = "filterEvent";
 	public static final String XML_TAG_COLOR = "color";
 	public static final String XML_TAG_ARGB = "argb";
 	public static final String XML_TAG_UNIQUE_VALUE_LIST = "uniqueValueList";

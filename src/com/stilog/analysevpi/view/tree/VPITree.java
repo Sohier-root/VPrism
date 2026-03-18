@@ -21,12 +21,17 @@ import javax.swing.tree.TreePath;
 
 import com.stilog.analysevpi.controller.ComparisonController;
 import com.stilog.analysevpi.model.dto.MergeRequest;
+import com.stilog.analysevpi.view.filter.FilterDialog;
+import com.stilog.analysevpi.utils.VPIConstants;
 import com.stilog.vpimodel.objects.Attribute;
 import com.stilog.vpimodel.objects.Entity;
 import com.stilog.vpimodel.objects.Mergeable;
 import com.stilog.vpimodel.objects.Parameters;
 import com.stilog.vpimodel.objects.VPIDatas;
+import com.stilog.vpimodel.objects.filter.FilterGroupNode;
+import com.stilog.vpimodel.utils.FilterParser;
 import com.stilog.vpimodel.vpsettings.FileDatas;
+import com.stilog.vpimodel.vpsettings.Filter;
 
 public class VPITree extends JTree {
 
@@ -59,6 +64,13 @@ public class VPITree extends JTree {
 				} else {
 					if (!e.isControlDown())
 						otherTree.clearSelection();
+					if (e.getClickCount() == 2) {
+						TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+						if (path != null) {
+							DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+							tryOpenFilterDialog(node, e);
+						}
+					}
 				}
 			}
 
@@ -238,6 +250,12 @@ public class VPITree extends JTree {
 		JMenuItem infoItem = new JMenuItem("Afficher info");
 		infoItem.addActionListener(e -> showInfo(obj));
 		menu.add(infoItem);
+		
+		if(computeFilterNode(node) != null) {
+			JMenuItem filterInfo = new JMenuItem("Détails du filtre");
+			filterInfo.addActionListener(e -> tryOpenFilterDialog(node, null));
+			menu.add(filterInfo);
+		}
 
 		// Menu contextuel uniquement pour l'arbre de référence
 		if (!isRefTree) {
@@ -412,4 +430,48 @@ public class VPITree extends JTree {
 
 		JOptionPane.showMessageDialog(null, scrollPane, "Informations", JOptionPane.INFORMATION_MESSAGE);
 	}
+
+	/**
+	 * Ouvre la FilterDialog si le nœud est un Parameters appartenant à un filtre.
+	 * Détecte le parent FileDatas : si c'est un Filter, on parse et on affiche.
+	 */
+	private void tryOpenFilterDialog(DefaultMutableTreeNode node, MouseEvent e) {
+	    Object obj = node.getUserObject();
+	    
+	    Filter parentFilter = null;
+	    if((parentFilter = computeFilterNode(node)) == null) return;
+	    
+	    if(obj instanceof Entity) {
+	    	DefaultMutableTreeNode childNode = (DefaultMutableTreeNode) node.getChildAt(0);
+	    	obj = childNode.getUserObject();
+	    }
+	    Parameters param = (Parameters) obj;
+	    String conditionsXml = param.getAttributeValue(VPIConstants.PARAMETER_CONDITIONS);
+	    if (conditionsXml == null || conditionsXml.isBlank()) return;
+
+	    boolean isEventFilter = VPIConstants.NAME_TREE_EVENTSFILTER.equals(parentFilter.getName());
+
+	    FilterGroupNode group = FilterParser.parse(conditionsXml, isEventFilter);
+	    FilterDialog dialog = new FilterDialog(this, param.getName(), group);
+	    dialog.setVisible(true);
+	}
+	
+	private Filter computeFilterNode(DefaultMutableTreeNode node) {
+	    Object obj = node.getUserObject();
+	    if (!(obj instanceof Parameters) && !(obj instanceof Entity)) return null;
+
+	    // Remonter l'arbre jusqu'à trouver un nœud FileDatas de type Filter
+	    Filter parentFilter = null;
+	    javax.swing.tree.TreeNode current = node.getParent();
+	    while (current instanceof DefaultMutableTreeNode) {
+	        Object currentObj = ((DefaultMutableTreeNode) current).getUserObject();
+	        if (currentObj instanceof Filter) {
+	            parentFilter = (Filter) currentObj;
+	            break;
+	        }
+	        current = current.getParent();
+	    }
+	    return parentFilter;
+	}
 }
+

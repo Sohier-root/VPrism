@@ -7,7 +7,7 @@ public class GeneralCorrespondance {
 
 	private Map<String, Correspondances> corrMap = new HashMap<>();
 	
-	private static GeneralCorrespondance instance;
+	private static volatile GeneralCorrespondance instance;
 	
 	public static GeneralCorrespondance getInstance() {
 		if(instance == null)

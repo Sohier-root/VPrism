@@ -38,6 +38,8 @@ public abstract class FileDatas extends Resolveable{
 	private static final String LINE_SEPARATOR = System.lineSeparator();
 	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 	
+	private static final DocumentBuilderFactory DB_FACTORY = DocumentBuilderFactory.newInstance();
+	
 	String name;
 	File file;
 	List<Entity> entities = new ArrayList<>();
@@ -178,8 +180,7 @@ public abstract class FileDatas extends Resolveable{
 	
 	protected Document getDocument(String xml) {
 		try {
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			DocumentBuilder dBuilder = DB_FACTORY.newDocumentBuilder();
 			
 			InputSource is = new InputSource(new StringReader(xml));
 			return dBuilder.parse(is);

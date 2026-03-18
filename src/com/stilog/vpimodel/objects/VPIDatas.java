@@ -111,7 +111,7 @@ public class VPIDatas {
 		creationRule.parseDatas();
 		
 		//Regle de création d'événement
-		treeStruct = new TreeStruct(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_TREE_STRUCT, VPIConstants.NAME_TREE_TREESTRUCT);
+		treeStruct = new TreeStruct(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_EVENTS_STRUCT, VPIConstants.NAME_TREE_TREESTRUCT);
 		treeStruct.parseDatas();
 		
 		//Dimension
@@ -129,11 +129,13 @@ public class VPIDatas {
 						
 					case VPIConstants.FILENAME_RESOURCES_FILTER:
 						resourceFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESFILTER);
+						resourceFilter.setFilterCorrespondanceKey(VPIConstants.XML_TAG_FILTER_RESOURCE);
 						resourceFilter.parseDatas();
 						break;
 						
 					case VPIConstants.FILENAME_EVENTS_FILTER:
 						eventFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSFILTER);
+						eventFilter.setFilterCorrespondanceKey(VPIConstants.XML_TAG_FILTER_EVENT);
 						eventFilter.parseDatas();
 						break;
 						
@@ -197,7 +199,7 @@ public class VPIDatas {
 				}
 			}
 			
-			File destFile = new File(outputPathVpi + "\\" + this.fileName.replace(".vpi", "_merged.vpi").replace(".vps", "_merged.vps"));
+			File destFile = new File(new File(outputPathVpi, fileName).getAbsolutePath().replace(".vpi", "_merged.vpi").replace(".vps", "_merged.vps"));
 			Compressor.zip(outputDirFile, destFile);
 		}
 		catch(Exception e) {
@@ -223,8 +225,9 @@ public class VPIDatas {
 	    	if (FileDatas.class.isAssignableFrom(field.getType())) {
 	    		try {
 	    		field.setAccessible(true);
-	    		if(!((FileDatas) field.get(this)).isHidden())
-	    			result.add((FileDatas) field.get(this));
+	    		FileDatas fd = (FileDatas) field.get(this);
+	    		if (fd != null && !fd.isHidden())
+	    		    result.add(fd);
 	    		}
 	    		catch(Exception e) {e.printStackTrace();}
 	    	}

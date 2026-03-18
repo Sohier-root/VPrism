@@ -13,8 +13,6 @@ import com.stilog.analysevpi.model.ComparisonModel;
 import com.stilog.analysevpi.utils.SystemInfo;
 import com.stilog.analysevpi.view.ComparisonMainPage;
 
-import com.stilog.documentation.view.DocumentationMainPage;
-
 public class MainFrame extends JFrame{
 
 	private SystemInfo infos = SystemInfo.getInstance();
@@ -62,7 +60,7 @@ public class MainFrame extends JFrame{
         
         JMenuItem module2Item = new JMenuItem("Module 2");
         module2Item.addActionListener(e -> {
-        	switchToModule(createDocumentationPage());
+        	switchToModule(null);
         });
         
         modulesMenu.add(module1Item);
@@ -88,9 +86,5 @@ public class MainFrame extends JFrame{
     	ComparisonModel model = new ComparisonModel();
     	ComparisonController controller = new ComparisonController(model);
     	return new ComparisonMainPage(controller, this);
-    }
-    
-    public DocumentationMainPage createDocumentationPage() {
-    	return new DocumentationMainPage(this);
     }
 }

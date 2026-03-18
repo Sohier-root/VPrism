@@ -66,7 +66,7 @@ public class MainFrame extends JFrame{
         });
         
         modulesMenu.add(module1Item);
-        modulesMenu.add(module2Item);
+        //modulesMenu.add(module2Item);
         
         menuBar.add(fileMenu);
         menuBar.add(modulesMenu);

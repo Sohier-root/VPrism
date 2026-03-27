@@ -172,7 +172,7 @@ public class ImportExport extends FileDatas{
 		Element resourceModel = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODEL).item(0);
 		if(resourceModel != null) {
 			Element entityId =  (Element) resourceModel.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0);
-			String resourceModelName = GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.XML_TAG_ID, entityId.getTextContent());
+			String resourceModelName = GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, entityId.getTextContent());
 			
 			paramParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, resourceModelName);
 		}

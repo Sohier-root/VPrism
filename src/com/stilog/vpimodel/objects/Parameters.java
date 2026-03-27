@@ -56,6 +56,20 @@ public class Parameters extends Mergeable{
 		return "";
 	}
 
+	/**
+	 * Retourne true si la clé existe dans les attributs visibles ou cachés,
+	 * quelle que soit la valeur (même vide).
+	 */
+	public boolean hasAttribute(String key) {
+		for (Attribute attr : attributes) {
+			if (attr.getKey().equals(key)) return true;
+		}
+		for (Attribute attr : hiddenAttributes) {
+			if (attr.getKey().equals(key)) return true;
+		}
+		return false;
+	}
+
 	public void setResolve(boolean resolve) {
 		super.setResolve(resolve);
 		

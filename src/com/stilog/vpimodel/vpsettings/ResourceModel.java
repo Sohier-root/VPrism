@@ -25,7 +25,43 @@ public class ResourceModel extends FileDatas{
 	public ResourceModel(String filePath, String name) {
 		super(filePath, name);
 	}
-	
+
+	/**
+	 * Surcharge de parseDatas pour pré-enregistrer tous les noms de dimensions
+	 * dans GeneralCorrespondance AVANT le parseXml().
+	 *
+	 * Sans ce pré-enregistrement, une rubrique de type ResourceReference qui
+	 * pointe vers une dimension parsée plus tard dans le fichier ne trouve pas
+	 * son nom et affiche un champ vide.
+	 */
+	@Override
+	public void parseDatas() {
+		preRegisterDimensionNames();
+		super.parseDatas();
+	}
+
+	/**
+	 * Lit le fichier ligne par ligne (id;nom;...) et enregistre chaque
+	 * id → nom dans GeneralCorrespondance sous la clé PARAMETER_RESOURCEMODEL,
+	 * sans parser le XML.
+	 */
+	private void preRegisterDimensionNames() {
+		try (java.io.BufferedReader br = new java.io.BufferedReader(
+				new java.io.FileReader(super.file.getAbsolutePath()))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				String[] values = line.split(";");
+				if (values.length < 2) continue;
+				String id   = values[0].trim();
+				String name = values[1].replace("\"", "").trim();
+				GeneralCorrespondance.getInstance().addCorrespondance(
+						VPIConstants.PARAMETER_RESOURCEMODEL, id, name);
+			}
+		} catch (java.io.IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/*
 	 * PARSE XML
 	 */
@@ -51,6 +87,8 @@ public class ResourceModel extends FileDatas{
 		
 		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, id, entity.getName());
 		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, uid, entity.getName());
+		// Enregistrement sous la clé "Dimension" pour les recherches depuis Hierarchies et ImportExport
+		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, id, entity.getName());
 		/*
 		 * Ajout attribut caché
 		 */

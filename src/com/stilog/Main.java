@@ -1,40 +1,30 @@
 package com.stilog;
 
-import java.net.URL;
-
-import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
-import com.stilog.analysevpi.controller.ComparisonController;
-import com.stilog.analysevpi.model.ComparisonModel;
-import com.stilog.analysevpi.view.ComparisonMainPage;
 import com.stilog.view.MainFrame;
+import com.stilog.view.ThemeManager;
 
 public class Main {
     public static void main(String[] args) {
-        
-    	configureInterface();
-        
-        SwingUtilities.invokeLater(() -> {
-            MainFrame frame = new MainFrame();
-            frame.setVisible(true);
-        });
+        configureInterface();
+        SwingUtilities.invokeLater(() -> new MainFrame());
     }
-    
+
     private static void configureInterface() {
-    	
-    	//Design interface
-    	FlatLightLaf.setup();
-    	UIManager.getLookAndFeelDefaults().put("Tree.showDefaultIcons", true);
-    	UIManager.put("Tree.leafIcon",   UIManager.getIcon("FileView.fileIcon"));
-    	UIManager.put("Tree.closedIcon", UIManager.getIcon("FileChooser.listViewIcon"));
-    	UIManager.put("Tree.openIcon",   UIManager.getIcon("FileChooser.detailsViewIcon"));
-    	
-    	//ToolTip Delay
-    	ToolTipManager.sharedInstance().setInitialDelay(250);
+        // Le ThemeManager lit la préférence sauvegardée et applique le bon LAF
+        ThemeManager.getInstance().applyLafOnStartup();
+
+        // Icônes de l'arbre
+        UIManager.getLookAndFeelDefaults().put("Tree.showDefaultIcons", true);
+        UIManager.put("Tree.leafIcon",   UIManager.getIcon("FileView.fileIcon"));
+        UIManager.put("Tree.closedIcon", UIManager.getIcon("FileChooser.listViewIcon"));
+        UIManager.put("Tree.openIcon",   UIManager.getIcon("FileChooser.detailsViewIcon"));
+
+        // Tooltip
+        ToolTipManager.sharedInstance().setInitialDelay(250);
+        ToolTipManager.sharedInstance().setDismissDelay(8000);
     }
 }

@@ -26,9 +26,12 @@ public class VPIDatas {
 
 	private static final String OUTPUT_DIR = System.getProperty("java.io.tmpdir") + "vpcompare/";
 	private static final String OUTPUT_DIR_COMPARISON_TESTED = OUTPUT_DIR + "comparison/tested/";
-	private static final String OUTPUT_DIR_COMPARISON_REF = OUTPUT_DIR + "comparison/ref/";
+	private static final String OUTPUT_DIR_COMPARISON_REF    = OUTPUT_DIR + "comparison/ref/";
 	private static final String OUTPUT_DIR_COMPARISON_MERGED = OUTPUT_DIR + "comparison/merged/";
-	private static final String OUTPUT_DIR_DOC = OUTPUT_DIR + "documentation/";
+	private static final String OUTPUT_DIR_DOC               = OUTPUT_DIR + "documentation/";
+	/** Répertoire dédié au Module 2 (VPI unique). */
+	private static final String OUTPUT_DIR_SINGLE            = OUTPUT_DIR + "single/";
+
 	String name;
 	String fileName;
 	String filePath;
@@ -86,6 +89,10 @@ public class VPIDatas {
 				
 			case DOCUMENTATION:
 				outputDir = OUTPUT_DIR_DOC;
+				break;
+
+			case SINGLE:
+				outputDir = OUTPUT_DIR_SINGLE;
 				break;
 				
 			default:

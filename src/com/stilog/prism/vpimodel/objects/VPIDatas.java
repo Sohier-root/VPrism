@@ -19,6 +19,7 @@ import com.stilog.prism.vpimodel.vpsettings.FileDatas;
 import com.stilog.prism.vpimodel.vpsettings.Filter;
 import com.stilog.prism.vpimodel.vpsettings.Hierarchies;
 import com.stilog.prism.vpimodel.vpsettings.ImportExport;
+import com.stilog.prism.vpimodel.vpsettings.FormModel;
 import com.stilog.prism.vpimodel.vpsettings.ResourceModel;
 import com.stilog.prism.vpimodel.vpsettings.TreeStruct;
 
@@ -38,6 +39,7 @@ public class VPIDatas {
 	long lenght;
 	
 	ResourceModel resourceModel;
+	FormModel formModel;
 	Filter resourceFilter, eventFilter;
 	ImportExport exportResources, exportEvents, importResources, importEvents;
 	Hierarchies hierarchies;
@@ -55,6 +57,10 @@ public class VPIDatas {
 	 */
 	public ResourceModel getResourcesModel() {
 		return resourceModel;
+	}
+	
+	public FormModel getFormModel() {
+		return formModel;
 	}
 	
 	public Filter getResourceFilter() {
@@ -124,6 +130,10 @@ public class VPIDatas {
 		//Dimension
 		resourceModel = new ResourceModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_RESOURCE_MODEL, VPIConstants.NAME_TREE_RESOURCESMODEL);
 		resourceModel.parseDatas();
+		
+		//Formulaires
+		formModel = new FormModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_FORM_MODEL, VPIConstants.NAME_TREE_FORMMODEL);
+		formModel.parseDatas();
 		
 		for(File file : filesDir.listFiles()) {
 			try {
@@ -277,6 +287,9 @@ public class VPIDatas {
 		case VPIConstants.FILENAME_EVENTS_STRUCT:
 			return hierarchies;
 			
+		case VPIConstants.FILENAME_FORM_MODEL:
+			return formModel;
+			
 		default:
 			return null;
 		}
@@ -284,6 +297,10 @@ public class VPIDatas {
 	
 	public String getName() {
 		return name;
+	}
+
+	public String getFilePath() {
+		return filePath;
 	}
 
 	public String getInfo() {

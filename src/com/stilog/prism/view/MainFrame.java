@@ -13,6 +13,7 @@ import com.stilog.prism.comparevpi.controller.ComparisonController;
 import com.stilog.prism.comparevpi.model.ComparisonModel;
 import com.stilog.prism.comparevpi.utils.SystemInfo;
 import com.stilog.prism.comparevpi.view.ComparisonMainPage;
+import com.stilog.prism.view.documentation.DocumentationWindow;
 
 public class MainFrame extends JFrame {
 
@@ -24,6 +25,7 @@ public class MainFrame extends JFrame {
     private JButton btnModule1;
     private JButton btnModule2;
     private JButton themeToggleBtn;
+    private JButton docBtn;
     private int activeModule = 1;
 
     // Instances conservées pour ne pas perdre les données au changement de thème
@@ -88,12 +90,15 @@ public class MainFrame extends JFrame {
         rightPanel.setOpaque(false);
 
         themeToggleBtn = buildThemeToggleButton();
+        docBtn = buildIconButton(MaterialDesign.MDI_HELP_CIRCLE, "Aide et documentation", theme.textDim());
+        docBtn.addActionListener(e -> new DocumentationWindow().setVisible(true));
         JButton settingsBtn = buildIconButton(MaterialDesign.MDI_SETTINGS, "Paramètres", theme.textDim());
         settingsBtn.addActionListener(e -> showSettingsMenu(settingsBtn));
         JButton quitBtn = buildIconButton(MaterialDesign.MDI_POWER, "Quitter", new Color(200, 70, 70));
         quitBtn.addActionListener(e -> System.exit(0));
 
         rightPanel.add(themeToggleBtn);
+        rightPanel.add(docBtn);
         rightPanel.add(settingsBtn);
         rightPanel.add(quitBtn);
 
@@ -215,6 +220,8 @@ public class MainFrame extends JFrame {
             : MaterialDesign.MDI_WEATHER_NIGHT;
         themeToggleBtn.setIcon(FontIcon.of(icon, 18, theme.textDim()));
         themeToggleBtn.setToolTipText(theme.isDark() ? "Passer en thème clair" : "Passer en thème sombre");
+
+        docBtn.setIcon(FontIcon.of(MaterialDesign.MDI_HELP_CIRCLE, 18, theme.textDim()));
 
         updateNavButtons();
 

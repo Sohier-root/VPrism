@@ -25,16 +25,7 @@ import com.stilog.prism.vpimodel.objects.VPIDatas;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.stilog.prism.vpimodel.vpsettings.FileDatas;
 
-/**
- * Onglet 2 du Module 2 : diagramme de dépendances.
- *
- * Layout en 8 colonnes avec zones visuelles de regroupement :
- *
- *   [Dimension] [Hiérarchie]  |  [FILTRES: Res | Evt]  |  [IMPORTS: Res | Evt]  [EXPORTS: Res | Evt]
- *
- * Les groupes Filtres / Imports / Exports sont mis en valeur par un rectangle
- * englobant avec étiquette, et un espacement plus large les sépare du reste.
- */
+
 public class VPIDependencyDiagramTab implements AbstractVPITab {
 
     private static final String TAB_TITLE = "Dépendances";
@@ -270,8 +261,11 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
 
     static class DNode {
         final String id, label; final NodeType type;
+        final Entity entity;
         double x, y; int rank;
-        DNode(String id, String label, NodeType type) { this.id=id; this.label=label; this.type=type; }
+        DNode(String id, String label, NodeType type, Entity entity) {
+            this.id=id; this.label=label; this.type=type; this.entity=entity;
+        }
     }
 
     static class DEdge {
@@ -301,7 +295,7 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
             for (Entity entity : fd.getEntities()) {
                 NodeType nt  = resolveType(entity, fd.getName());
                 String   nid = nt.name() + "::" + entity.getName();
-                m.nodes.putIfAbsent(nid, new DNode(nid, entity.getName(), nt));
+                m.nodes.putIfAbsent(nid, new DNode(nid, entity.getName(), nt, entity));
             }
         }
 
@@ -590,7 +584,7 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
         /** Retourne un nœud avec Y remplacé, sans modifier l'original. */
         private DNode withY(DNode n, Double newY) {
             if (newY == null) return n;
-            DNode tmp = new DNode(n.id, n.label, n.type);
+            DNode tmp = new DNode(n.id, n.label, n.type, n.entity);
             tmp.x = n.x; tmp.y = newY; tmp.rank = n.rank;
             return tmp;
         }
@@ -1037,7 +1031,19 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
                 menu.add(showAll);
             }
 
+            menu.addSeparator();
+            JMenuItem infoItem = new JMenuItem("Infos…");
+            infoItem.addActionListener(ae -> showNodeInfo(n));
+            menu.add(infoItem);
+
             menu.show(this, e.getX(), e.getY());
+        }
+
+        // ── Fenêtre d'infos ───────────────────────────────────────────────────
+
+        private void showNodeInfo(DNode n) {
+            if (n.entity == null) return;
+            new NodeInfoDialog(SwingUtilities.getWindowAncestor(this), n).setVisible(true);
         }
 
         private void onMove(MouseEvent e) {
@@ -1057,6 +1063,195 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
             ty=my-(my-ty)*(newScale/scale);
             scale=newScale;
             repaint();
+        }
+    }
+
+    // =========================================================================
+    // Fenêtre d'informations d'un nœud
+    // =========================================================================
+
+    /**
+     * Dialog non-modale affichant les Parameters et leurs attributs
+     * de l'Entity associée au nœud du diagramme.
+     */
+    class NodeInfoDialog extends JDialog {
+
+        private static final Color BG        = new Color(245, 247, 251);
+        private static final Color BG_CARD   = Color.WHITE;
+        private static final Color BG_HEADER = new Color(235, 239, 248);
+        private static final Color FG_TITLE  = new Color(20,  30,  55);
+        private static final Color FG_DIM    = new Color(70,  85, 120);
+        private static final Color FG_VALUE  = new Color(35,  42,  58);
+        private static final Color BORDER    = new Color(210, 218, 232);
+        private static final Color ACCENT_BG = new Color(230, 238, 255);
+        private static final Color ACCENT_FG = new Color(40,  80, 190);
+
+        NodeInfoDialog(java.awt.Window parent, DNode n) {
+            super(parent, "Infos — " + n.label, ModalityType.MODELESS);
+            setSize(520, 580);
+            setLocationRelativeTo(parent);
+            setResizable(true);
+
+            JPanel root = new JPanel(new BorderLayout(0, 0));
+            root.setBackground(BG);
+
+            // ── En-tête ──────────────────────────────────────────────────────
+            JPanel header = new JPanel(new BorderLayout(10, 0));
+            header.setBackground(BG_HEADER);
+            header.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER),
+                new EmptyBorder(12, 16, 12, 16)));
+
+            Color[] pal = diagramPalette(n.type);
+            JLabel badge = new JLabel(diagramTypeLbl(n.type));
+            badge.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+            badge.setForeground(pal[0].darker());
+            badge.setOpaque(true);
+            badge.setBackground(new Color(pal[0].getRed(), pal[0].getGreen(), pal[0].getBlue(), 30));
+            badge.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(pal[0].getRed(), pal[0].getGreen(), pal[0].getBlue(), 80), 1),
+                new EmptyBorder(2, 8, 2, 8)));
+
+            JLabel nameLabel = new JLabel(n.label);
+            nameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+            nameLabel.setForeground(FG_TITLE);
+
+            JPanel headerLeft = new JPanel();
+            headerLeft.setLayout(new BoxLayout(headerLeft, BoxLayout.Y_AXIS));
+            headerLeft.setOpaque(false);
+            badge.setAlignmentX(Component.LEFT_ALIGNMENT);
+            nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            headerLeft.add(badge);
+            headerLeft.add(Box.createVerticalStrut(5));
+            headerLeft.add(nameLabel);
+            header.add(headerLeft, BorderLayout.CENTER);
+            root.add(header, BorderLayout.NORTH);
+
+            // ── Contenu scrollable ────────────────────────────────────────────
+            JPanel content = new JPanel();
+            content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+            content.setBackground(BG);
+            content.setBorder(new EmptyBorder(10, 12, 10, 12));
+
+            if (n.entity == null || n.entity.getParameters().isEmpty()) {
+                JLabel empty = new JLabel("Aucun paramètre disponible.");
+                empty.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 12));
+                empty.setForeground(FG_DIM);
+                content.add(empty);
+            } else {
+                for (Parameters param : n.entity.getParameters()) {
+                    content.add(buildParamCard(param));
+                    content.add(Box.createVerticalStrut(8));
+                }
+            }
+            content.add(Box.createVerticalGlue());
+
+            JScrollPane scroll = new JScrollPane(content);
+            scroll.setBorder(BorderFactory.createEmptyBorder());
+            scroll.getViewport().setBackground(BG);
+            scroll.getVerticalScrollBar().setUnitIncrement(14);
+            root.add(scroll, BorderLayout.CENTER);
+
+            // ── Pied ─────────────────────────────────────────────────────────
+            JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 8));
+            footer.setBackground(BG_HEADER);
+            footer.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER));
+            JButton closeBtn = new JButton("Fermer");
+            closeBtn.putClientProperty("JButton.buttonType", "roundRect");
+            closeBtn.addActionListener(e -> dispose());
+            footer.add(closeBtn);
+            root.add(footer, BorderLayout.SOUTH);
+
+            setContentPane(root);
+        }
+
+        private JPanel buildParamCard(Parameters param) {
+            JPanel card = new JPanel(new BorderLayout(0, 0));
+            card.setBackground(BG_CARD);
+            card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER, 1),
+                new EmptyBorder(0, 0, 4, 0)));
+            card.setAlignmentX(Component.LEFT_ALIGNMENT);
+            card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+            // Titre du Parameters
+            JPanel titleBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 5));
+            titleBar.setBackground(ACCENT_BG);
+            titleBar.setBorder(BorderFactory.createMatteBorder(0, 3, 1, 0, ACCENT_FG));
+            JLabel titleLbl = new JLabel(param.getName());
+            titleLbl.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+            titleLbl.setForeground(ACCENT_FG);
+            titleBar.add(titleLbl);
+            card.add(titleBar, BorderLayout.NORTH);
+
+            // Attributs
+            List<com.stilog.prism.vpimodel.objects.Attribute> attrs = param.getAttributes();
+            if (attrs.isEmpty()) {
+                JLabel noAttr = new JLabel("  (aucun attribut)");
+                noAttr.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 11));
+                noAttr.setForeground(FG_DIM);
+                noAttr.setBorder(new EmptyBorder(4, 8, 4, 8));
+                card.add(noAttr, BorderLayout.CENTER);
+            } else {
+                JPanel attrPanel = new JPanel();
+                attrPanel.setLayout(new BoxLayout(attrPanel, BoxLayout.Y_AXIS));
+                attrPanel.setBackground(BG_CARD);
+                attrPanel.setBorder(new EmptyBorder(4, 8, 4, 8));
+
+                for (com.stilog.prism.vpimodel.objects.Attribute attr : attrs) {
+                    // Ignorer les attributs internes __DIM
+                    if (attr.getKey().endsWith(VPIConstants.CORRESPONDANCE_DIM_SUFFIX)) continue;
+
+                    JPanel row = new JPanel(new BorderLayout(12, 0));
+                    row.setOpaque(false);
+                    row.setAlignmentX(Component.LEFT_ALIGNMENT);
+                    row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+                    row.setBorder(new EmptyBorder(1, 0, 1, 0));
+
+                    JLabel keyLbl = new JLabel(attr.getKey());
+                    keyLbl.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+                    keyLbl.setForeground(FG_DIM);
+                    keyLbl.setPreferredSize(new Dimension(180, 20));
+
+                    String val = attr.getValue();
+                    JLabel valLbl = new JLabel(val == null || val.isBlank() ? "—" : val);
+                    valLbl.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+                    valLbl.setForeground(FG_VALUE);
+
+                    row.add(keyLbl, BorderLayout.WEST);
+                    row.add(valLbl, BorderLayout.CENTER);
+                    attrPanel.add(row);
+                }
+                card.add(attrPanel, BorderLayout.CENTER);
+            }
+            return card;
+        }
+
+        // Délégation vers les méthodes de VPIDependencyDiagramTab
+        private Color[] diagramPalette(NodeType t) {
+            return switch (t) {
+                case DIMENSION       -> new Color[]{ C_DIM,      C_DIM_B      };
+                case HIERARCHY       -> new Color[]{ C_HIER,     C_HIER_B     };
+                case FILTER_RESOURCE -> new Color[]{ C_FILT_RES, C_FILT_RES_B };
+                case FILTER_EVENT    -> new Color[]{ C_FILT_EVT, C_FILT_EVT_B };
+                case IMPORT_RESOURCE -> new Color[]{ C_IMP_RES,  C_IMP_RES_B  };
+                case IMPORT_EVENT    -> new Color[]{ C_IMP_EVT,  C_IMP_EVT_B  };
+                case EXPORT_RESOURCE -> new Color[]{ C_EXP_RES,  C_EXP_RES_B  };
+                case EXPORT_EVENT    -> new Color[]{ C_EXP_EVT,  C_EXP_EVT_B  };
+            };
+        }
+
+        private String diagramTypeLbl(NodeType t) {
+            return switch (t) {
+                case DIMENSION       -> "Dimension";
+                case HIERARCHY       -> "Hiérarchie";
+                case FILTER_RESOURCE -> "Filtre Ressource";
+                case FILTER_EVENT    -> "Filtre Événement";
+                case IMPORT_RESOURCE -> "Import Ressource";
+                case IMPORT_EVENT    -> "Import Événement";
+                case EXPORT_RESOURCE -> "Export Ressource";
+                case EXPORT_EVENT    -> "Export Événement";
+            };
         }
     }
 }

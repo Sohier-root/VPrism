@@ -8,9 +8,12 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
+import java.io.File;
+
 import com.stilog.prism.analyzevpi.controller.SingleVPIController;
 import com.stilog.prism.analyzevpi.view.tabs.AbstractVPITab;
 import com.stilog.prism.analyzevpi.view.tabs.VPIDependencyDiagramTab;
+import com.stilog.prism.analyzevpi.view.tabs.VPIHistoryTab;
 import com.stilog.prism.analyzevpi.view.tabs.VPITreeTab;
 
 /**
@@ -36,6 +39,13 @@ public class SingleVPIMainPage extends JPanel {
     private final List<AbstractVPITab> tabs = new ArrayList<>();
 
     private JTabbedPane tabbedPane;
+
+    /**
+     * Répertoire de décompression du module SINGLE.
+     * Correspond à {@code System.getProperty("java.io.tmpdir") + "vpcompare/single/"}.
+     */
+    private static final java.io.File SINGLE_WORK_DIR =
+        new java.io.File(System.getProperty("java.io.tmpdir") + "vpcompare/single/");
 
     public SingleVPIMainPage(SingleVPIController controller, JFrame parentFrame) {
         this.controller = controller;
@@ -64,6 +74,10 @@ public class SingleVPIMainPage extends JPanel {
         // Onglet 2 : diagramme de dépendances
         VPIDependencyDiagramTab diagramTab = new VPIDependencyDiagramTab();
 
+        // Onglet 3 : historique (history.txt + historytracker.txt)
+        VPIHistoryTab historyTab = new VPIHistoryTab();
+        historyTab.setWorkDir(SINGLE_WORK_DIR);
+
         // Câblage : quand un fichier est chargé dans l'onglet arbre,
         // tous les autres onglets sont notifiés.
         treeTab.addOnLoadListener(data -> {
@@ -78,6 +92,7 @@ public class SingleVPIMainPage extends JPanel {
         // Ajoutez simplement vos nouveaux onglets ici :
         registerTab(treeTab);
         registerTab(diagramTab);
+        registerTab(historyTab);
         // registerTab(new JsonExportTab(controller));
         // registerTab(new CsvExportTab(controller));
     }

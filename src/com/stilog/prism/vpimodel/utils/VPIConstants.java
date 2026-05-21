@@ -12,6 +12,9 @@ public class VPIConstants {
 	public static final String FILENAME_EVENTS_STRUCT = "eventtreestruct.txt";
 	public static final String FILENAME_DAILY_CALENDAR = "dailycalendar.txt";
 	public static final String FILENAME_CREATION_RULE = "eventcreationrule.txt";
+	public static final String FILENAME_HISTORY = "history.txt";
+	public static final String FILENAME_HISTORY_TRACKER = "historytracker.txt";
+	public static final String FILENAME_FORM_MODEL = "formmodel.txt";
 	
 	
 	/*
@@ -115,6 +118,7 @@ public class VPIConstants {
 	public static final String PARAMETER_CREATION_RULE = "Règle de création";
 	public static final String PARAMETER_COLOR = "Couleur";
 	public static final String PARAMETER_VALUE_LIST = "Liste des valeurs";
+	public static final String PARAMETER_FORM_MODEL = "Formulaire";
 	
 	public static final String NAME_TREE_RESOURCESMODEL = "Resources Model";
 	public static final String NAME_TREE_RESOURCESFILTER = "Resources Filter";
@@ -127,4 +131,5 @@ public class VPIConstants {
 	public static final String NAME_TREE_DAILYCALENDAR = "Calendar";
 	public static final String NAME_TREE_CREATIONRULE= "Regle de creation";
 	public static final String NAME_TREE_TREESTRUCT= "Regle de creation";
+	public static final String NAME_TREE_FORMMODEL = "Formulaires";
 }

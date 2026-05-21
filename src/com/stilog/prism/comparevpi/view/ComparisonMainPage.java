@@ -10,7 +10,6 @@ import org.kordamp.ikonli.swing.FontIcon;
 
 import com.stilog.prism.comparevpi.controller.ComparisonController;
 import com.stilog.prism.comparevpi.utils.SystemInfo;
-import com.stilog.prism.comparevpi.view.documentation.DocumentationWindow;
 import com.stilog.prism.comparevpi.view.loading.LoadingIcon;
 import com.stilog.prism.comparevpi.view.loading.LoadingWindow;
 import com.stilog.prism.comparevpi.view.object.VButton;
@@ -54,7 +53,6 @@ public class ComparisonMainPage extends JPanel {
     private JToggleButton synchronizeBtn;
     private JToggleButton diffOnlyBtn;
     private JButton generateFilesBtn;
-    private JButton helpBtn;
     private JButton reverseDatasBtn;
 
     private FontIcon generateFilesIconNormal;
@@ -86,7 +84,6 @@ public class ComparisonMainPage extends JPanel {
     }
 
     private void refreshToolbarIcons() {
-        helpBtn.setIcon(FontIcon.of(MaterialDesign.MDI_HELP_CIRCLE, 18, theme.text()));
         reverseDatasBtn.setIcon(FontIcon.of(MaterialDesign.MDI_SWAP_HORIZONTAL, 18, theme.text()));
         generateFilesIconNormal = FontIcon.of(MaterialDesign.MDI_FILE_CHECK, 18, new Color(130, 220, 160));
         // Ne remplacer l'icône de generateFilesBtn que s'il n'est pas en train de charger
@@ -208,9 +205,6 @@ public class ComparisonMainPage extends JPanel {
         };
         bar.setOpaque(false);
 
-        this.helpBtn = createToolbarButton(MaterialDesign.MDI_HELP_CIRCLE, "Aide et documentation");
-        this.helpBtn.addActionListener(e -> openDocumentation());
-
         this.synchronizeBtn = createToolbarToggleButton(MaterialDesign.MDI_SYNC, TOOLTIP_DESYNCHRONIZE);
         this.diffOnlyBtn    = createToolbarToggleButton(MaterialDesign.MDI_VECTOR_DIFFERENCE, TOOLTIP_DISPLAY_DIFFONLY);
         this.diffOnlyBtn.setEnabled(false);
@@ -223,12 +217,6 @@ public class ComparisonMainPage extends JPanel {
 
         this.reverseDatasBtn = createToolbarButton(MaterialDesign.MDI_SWAP_HORIZONTAL, TOOLTIP_REVERSE);
 
-        JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
-        sep.setPreferredSize(new Dimension(1, 22));
-        sep.setForeground(theme.separator());
-
-        bar.add(helpBtn);
-        bar.add(sep);
         bar.add(diffOnlyBtn);
         bar.add(synchronizeBtn);
         bar.add(generateFilesBtn);
@@ -478,7 +466,7 @@ public class ComparisonMainPage extends JPanel {
         } else {
             generateFilesIconLoading.stop();
             generateFilesBtn.setIcon(generateFilesIconNormal);
-            generateFilesBtn.setEnabled(true);
+            generateFilesBtn.setEnabled(false);
         }
     }
 
@@ -561,7 +549,5 @@ public class ComparisonMainPage extends JPanel {
         });
     }
 
-    private void openDocumentation() {
-        new DocumentationWindow().setVisible(true);
-    }
+
 }

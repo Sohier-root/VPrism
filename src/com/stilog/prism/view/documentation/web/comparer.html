@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation VP Comparator</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<h1>Utilisation des données</h1>
+
+<!-- COMPARAISON -->
+<h2>Comparer les données</h2>
+<ol>
+    <li>Importez le fichier VPI de <strong>référence</strong> (zone gauche) puis le fichier <strong>testé</strong> (zone droite).</li>
+    <li>Cliquez sur le bouton <strong>« Comparer »</strong> en bas de l'application pour lancer l'analyse.</li>
+    <li>Les données présentant des différences apparaissent en <strong>rouge</strong> dans l'arbre de référence (gauche).</li>
+</ol>
+
+<div class="tip">
+    <strong>✅ Le saviez-vous :</strong> La comparaison s'effectue uniquement <strong>depuis la référence</strong>.<br/>
+    Si une donnée est présente <em>uniquement</em> dans le fichier <strong>testé</strong>, elle ne sera pas détectée comme différence.
+</div>
+
+<!-- FILTRES -->
+<h2>Afficher seulement les différences</h2>
+<p>
+    Après avoir lancé la comparaison, le bouton <strong>Afficher seulement les différences</strong> (barre d'outils)
+    masque tous les nœuds identiques et ne conserve que ceux présentant un écart.
+    Cliquer à nouveau sur ce bouton restaure l'affichage complet.
+</p>
+
+<!-- RESOLUTION -->
+<h2>Résolution des données</h2>
+<p>Deux actions permettent de corriger les différences directement depuis l'interface : <strong>Merge</strong> et <strong>Replace</strong>.</p>
+
+<h3>Merge — ajouter un élément manquant</h3>
+<p>Le Merge permet d'ajouter un élément présent dans la référence (gauche) mais absent du fichier testé (droite).</p>
+<ul>
+    <li>Faites un <strong>clic droit</strong> sur l'élément voulu dans l'arbre de gauche.</li>
+    <li>Sélectionnez l'option <strong>« Merge »</strong>.</li>
+    <li>L'élément apparaît maintenant dans l'arbre testé (affichage de droite).</li>
+</ul>
+
+<h3>Replace — remplacer une valeur incorrecte</h3>
+<p>Le Replace permet de remplacer un élément du fichier testé par la valeur de référence correspondante.</p>
+<ul>
+    <li>Cliquez sur l'élément de <strong>référence</strong> voulu (arbre gauche).</li>
+    <li>En maintenant la touche <strong>Ctrl</strong>, cliquez sur l'élément <strong>testé</strong> à remplacer (arbre droit). Les deux éléments doivent être sélectionnés simultanément.</li>
+    <li>Faites un <strong>clic droit</strong> sur l'élément de référence.</li>
+    <li>Sélectionnez l'option <strong>« Replace »</strong>.</li>
+    <li>L'élément testé est remplacé par la valeur de référence.</li>
+</ul>
+
+<div class="info-box">
+    <strong>💡 Astuce :</strong> Après un Merge ou un Replace, vous pouvez <strong>générer un nouveau fichier VPI/VPS</strong>
+    via le bouton dédié dans la barre d'outils, afin d'exporter le résultat corrigé.
+</div>
+
+<!-- INTERVERTIR -->
+<h2>Intervertir les affichages</h2>
+<p>
+    Le bouton <strong>Intervertir</strong> (barre d'outils) échange les rôles des deux fichiers :
+    le fichier testé devient la référence et vice versa.
+    Les résultats de comparaison sont remis à zéro et une nouvelle comparaison doit être lancée.
+</p>
+
+<!-- GÉNÉRATION -->
+<h2>Générer un nouveau fichier VPI/VPS</h2>
+<p>
+    Une fois les modifications appliquées (Merge, Replace), vous pouvez exporter l'arbre <strong>testé</strong>
+    sous forme d'un nouveau fichier VPI ou VPS.
+</p>
+<ol>
+    <li>Cliquez sur le bouton <strong>Générer un VPI/VPS</strong> dans la barre d'outils.</li>
+    <li>Un sélecteur de dossier s'ouvre : choisissez le dossier de destination.</li>
+    <li>Le fichier est généré automatiquement à partir des données de l'arbre testé et du VPS/VPI source importé.</li>
+</ol>
+
+<div class="warning-box">
+    <strong>⚠ Attention :</strong> Le bouton de génération n'est actif qu'après le chargement complet des deux fichiers (attendre la fin du dézipage en arrière-plan).
+</div>
+</body>
+</html>

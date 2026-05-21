@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<h1>Interface utilisateur</h1>
+
+<!-- HEADER GLOBAL -->
+<h2>Barre de navigation principale</h2>
+<p>La barre de navigation en haut de l'application est accessible depuis tous les modules.</p>
+<ul>
+    <li><strong>Comparaison</strong> — accède au module de comparaison de fichiers VPI/VPS.</li>
+    <li><strong>Analyse VPI</strong> — accède au module d'analyse d'un fichier VPI seul.</li>
+    <li><strong>Thème clair / sombre</strong> — bascule entre le thème clair et le thème sombre. La préférence est appliquée immédiatement à toute l'interface.</li>
+    <li><strong>Aide et documentation</strong> — ouvre cette fenêtre de documentation. Accessible depuis n'importe quel module.</li>
+    <li><strong>Paramètres</strong> — accès aux options de l'application (thème, quitter).</li>
+    <li><strong>Quitter</strong> — ferme l'application.</li>
+</ul>
+
+<!-- BARRE D'OUTILS COMPARAISON -->
+<h2>Barre d'outils du module Comparaison</h2>
+<p>La barre d'outils se trouve sous la barre de navigation, dans le module Comparaison uniquement.</p>
+<ul>
+    <li><img src="resources/DiffOnly.png" alt="">&nbsp;<strong>Afficher seulement les différences</strong> — masque les éléments identiques et ne conserve que les entrées présentant des écarts. Nécessite d'avoir lancé une comparaison au préalable. Ce bouton est désactivé tant que la comparaison n'a pas été effectuée.</li>
+    <li><img src="resources/Synchro.png" alt="">&nbsp;<strong>Synchroniser les deux affichages</strong> — lie le défilement vertical et l'expansion des nœuds des deux arbres. Actif par défaut. Cliquer à nouveau pour désynchroniser les vues.</li>
+    <li><img src="resources/Generate.png" alt="">&nbsp;<strong>Générer un VPI/VPS</strong> — crée un nouveau fichier VPI/VPS à partir de l'arbre <strong>Testé</strong> (droite), en intégrant les données du VPS/VPI importé. Un sélecteur de dossier de destination s'ouvre avant la génération. Ce bouton n'est actif qu'après le chargement complet des deux fichiers.</li>
+    <li><img src="resources/Reverse.png" alt="">&nbsp;<strong>Intervertir</strong> — échange les fichiers chargés entre la zone Référence (gauche) et la zone Testée (droite). Les résultats de comparaison sont remis à zéro.</li>
+</ul>
+
+<div class="warning-box">
+    <strong>⚠ Attention :</strong> Les boutons <em>Afficher seulement les différences</em> et <em>Générer un VPI/VPS</em> sont désactivés tant que les deux fichiers ne sont pas entièrement chargés et comparés.
+</div>
+
+<!-- ZONE D'AFFICHAGES -->
+<h2>Zones d'affichage</h2>
+<img src="resources/Affichages.png" alt="" class="screenshot">
+<ol>
+    <li><strong>Zone de fichier.</strong> Importez un VPI/VPS en cliquant sur le bouton <strong>« Importer »</strong>. Le chemin du fichier sélectionné s'affiche dans le champ texte.</li>
+    <li><strong>Zone d'arbre.</strong> L'arbre des données du VPI s'affiche ici. Les nœuds différents sont colorés en rouge après la comparaison.</li>
+</ol>
+
+<div class="info-box">
+    <strong>💡 Astuce :</strong>
+    La zone de gauche contient le VPI de <strong>référence</strong>.<br/>
+    La zone de droite contient le VPI <strong>testé</strong>.<br/>
+    Le bouton <em>Importer</em> de la zone Testée n'est disponible qu'après avoir chargé le fichier de référence.
+</div>
+
+<!-- FILTRES -->
+<h2>Visualisation des filtres</h2>
+<p>
+    Dans l'arbre, certains nœuds représentent des <strong>filtres VP</strong>.
+    Un double-clic sur un nœud filtre (ou clic droit → <em>Détails du filtre</em>) ouvre une fenêtre de visualisation dédiée :
+</p>
+<ul>
+    <li>Si les <strong>deux VPI sont chargés</strong> et que le filtre existe dans les deux fichiers, une fenêtre de <strong>comparaison côte à côte</strong> s'affiche (non modale).</li>
+    <li>Si <strong>un seul VPI est chargé</strong> ou si le filtre est absent de l'autre côté, une fenêtre simple (modale) affiche le filtre disponible.</li>
+</ul>
+<p>Les conditions du filtre sont représentées avec un code couleur selon leur opérateur :</p>
+<ul>
+    <li><strong style="color:#1c6e1c">Vert</strong> — égalité (=)</li>
+    <li><strong style="color:#1946aa">Bleu</strong> — comparaison (&lt;, &gt;, ≤, ≥)</li>
+    <li><strong style="color:#5a1ca0">Violet</strong> — appartenance (IN)</li>
+    <li><strong style="color:#8c5800">Jaune/Ocre</strong> — texte (LIKE, contient…)</li>
+    <li><strong style="color:#aa1c1c">Rouge</strong> — négation (NOT, !=)</li>
+</ul>
+</body>
+</html>

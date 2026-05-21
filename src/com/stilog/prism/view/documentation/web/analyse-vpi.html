@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<h1>Module Analyse VPI</h1>
+
+<p>
+    Le module <strong>Analyse VPI</strong> permet d'ouvrir et d'explorer un fichier VPI ou VPS
+    de manière autonome, sans avoir besoin d'un second fichier de comparaison.
+    Il est accessible depuis la barre de navigation principale en cliquant sur <strong>« Analyse VPI »</strong>.
+</p>
+
+<!-- ONGLET ARBRE -->
+<h2>Onglet « Arbre VPI/VPS »</h2>
+
+<h3>Importer un fichier</h3>
+<ol>
+    <li>Cliquez sur le bouton <strong>« Importer… »</strong> en haut de l'onglet.</li>
+    <li>Sélectionnez un fichier <code>.vpi</code> ou <code>.vps</code> depuis le sélecteur.</li>
+    <li>Une fenêtre de chargement s'affiche le temps du traitement.</li>
+    <li>L'arbre se peuple automatiquement avec la structure du fichier importé.</li>
+</ol>
+
+<h3>Navigation dans l'arbre</h3>
+<p>
+    L'arbre affiche la hiérarchie complète du fichier VPI, organisée par <strong>fichier de données</strong>,
+    puis par <strong>entités</strong>, <strong>paramètres</strong> et <strong>attributs</strong>.
+    Cliquez sur les nœuds pour les déplier ou les replier.
+</p>
+
+<h3>Visualisation des filtres</h3>
+<p>
+    Un <strong>double-clic</strong> sur un nœud de type filtre (dans les sections
+    <em>Filtre Ressources</em> ou <em>Filtre Événements</em>) ouvre une fenêtre
+    de visualisation des conditions du filtre avec un code couleur par opérateur :
+</p>
+<ul>
+    <li><strong style="color:#1c6e1c">Vert</strong> — égalité (=)</li>
+    <li><strong style="color:#1946aa">Bleu</strong> — comparaison (&lt;, &gt;, ≤, ≥)</li>
+    <li><strong style="color:#5a1ca0">Violet</strong> — appartenance (IN)</li>
+    <li><strong style="color:#8c5800">Jaune/Ocre</strong> — texte (LIKE, contient…)</li>
+    <li><strong style="color:#aa1c1c">Rouge</strong> — négation (NOT, !=)</li>
+</ul>
+
+<div class="info-box">
+    <strong>💡 Astuce :</strong> Seuls les nœuds appartenant aux sections
+    <em>Filtre Ressources</em> ou <em>Filtre Événements</em> ouvrent une fenêtre de filtre.
+    Un double-clic sur un autre type de nœud n'a pas d'effet.
+</div>
+
+<!-- ONGLET DEPENDANCES -->
+<h2>Onglet « Dépendances »</h2>
+
+<p>
+    L'onglet <strong>Dépendances</strong> s'active automatiquement dès qu'un fichier est importé
+    dans l'onglet Arbre. Il affiche un <strong>diagramme interactif</strong> représentant
+    les relations entre tous les éléments du VPI, organisés en 8 colonnes :
+</p>
+<ul>
+    <li><strong>Dimension</strong> — les dimensions du VPI</li>
+    <li><strong>Hiérarchie</strong> — les hiérarchies</li>
+    <li><strong>Filtres</strong> — Filtre Ressource et Filtre Événement</li>
+    <li><strong>Imports</strong> — Import Ressource et Import Événement</li>
+    <li><strong>Exports</strong> — Export Ressource et Export Événement</li>
+</ul>
+
+<h3>Navigation dans le diagramme</h3>
+<ul>
+    <li><strong>Molette souris</strong> — zoom avant / arrière</li>
+    <li><strong>Glisser (drag)</strong> — déplacer la vue (pan)</li>
+    <li><strong>Clic sur un nœud</strong> — sélectionner et mettre en évidence ses dépendances</li>
+    <li><strong>Survol (hover)</strong> — afficher une infobulle avec les détails du nœud</li>
+    <li><strong>Bouton « ⌖ Reset vue »</strong> — réinitialise le zoom et la position à l'état initial</li>
+</ul>
+
+<h3>Recherche</h3>
+<p>
+    La barre de recherche en haut du diagramme filtre les nœuds en temps réel.
+    Tapez le nom (ou une partie du nom) d'un élément pour le retrouver et le mettre en évidence.
+    Effacez le champ pour revenir à l'affichage complet.
+</p>
+
+<h3>Légende des couleurs</h3>
+<p>Chaque type d'élément possède sa propre couleur dans le diagramme :</p>
+<ul>
+    <li><strong style="color:#3478d7">Bleu</strong> — Dimension</li>
+    <li><strong style="color:#22a064">Vert</strong> — Hiérarchie</li>
+    <li><strong style="color:#c8641e">Orange</strong> — Filtre Ressource</li>
+    <li><strong style="color:#be2d50">Rose/Rouge</strong> — Filtre Événement</li>
+    <li><strong style="color:#5a37af">Violet</strong> — Import Ressource</li>
+    <li><strong style="color:#1482b9">Cyan</strong> — Import Événement</li>
+    <li><strong style="color:#9b329b">Magenta</strong> — Export Ressource</li>
+    <li><strong style="color:#0fa082">Teal</strong> — Export Événement</li>
+</ul>
+
+<div class="tip">
+    <strong>✅ Le saviez-vous :</strong> Les dépendances d'un nœud sélectionné sont
+    mises en évidence en <strong style="color:#ffd237">jaune</strong> pour faciliter
+    la lecture des relations dans des VPI complexes.
+</div>
+
+<div class="warning-box">
+    <strong>⚠ Attention :</strong> L'onglet Dépendances reste vide tant qu'aucun
+    fichier n'a été importé dans l'onglet Arbre VPI/VPS.
+</div>
+
+<!-- ONGLET HISTORIQUE -->
+<h2>Onglet « Historique »</h2>
+
+<p>
+    L'onglet <strong>Historique</strong> est disponible uniquement pour les fichiers
+    <code>.vps</code>. Il permet d'explorer l'intégralité des modifications enregistrées :
+    création, modification et suppression de ressources, d'événements et d'éléments de configuration.
+</p>
+
+<h3>Chargement</h3>
+<p>
+    Le traitement se fait en arrière-plan en plusieurs étapes : extraction de
+    <code>history.txt</code> et <code>historytracker.txt</code>, résolution des noms
+    lisibles depuis le VPS, puis indexation en streaming de l'historique détaillé.
+    Cette approche permet de gérer des fichiers de plusieurs gigaoctets sans impact
+    sur les performances — le détail des modifications est chargé à la demande au clic.
+</p>
+
+<h3>Filtres communs</h3>
+<p>
+    La barre du haut s'applique aux trois sous-onglets simultanément :
+    <strong>recherche globale</strong>, <strong>Modifié par</strong>,
+    <strong>Créé par</strong>, filtres de date sur modification et création
+    (<em>le</em>, <em>après le</em>, <em>avant le</em>, <em>cette semaine</em>…),
+    et <strong>Afficher supprimés</strong> pour inclure les entrées dont l'entité
+    n'existe plus dans le VPS (affichées en italique grisé par défaut).
+</p>
+
+<h3>Sous-onglet « Dimensions »</h3>
+<p>
+    Historique des ressources (<em>EventResourceX</em>). Le nom est résolu depuis
+    les rubriques d'identification du modèle de dimension. Le type affiché est le
+    nom de la dimension (ex. <em>OUTSOURCE</em>, <em>NETWORK ACTIVITIES</em>).
+    Filtres spécifiques : <strong>type de dimension</strong>.
+</p>
+
+<h3>Sous-onglet « Événements »</h3>
+<p>
+    Historique des <em>PlanningEvent</em>. Chaque événement est rattaché à son
+    <strong>arbre de création</strong> automatiquement : toutes les dimensions
+    obligatoires de l'arbre doivent être présentes, et aucune dimension étrangère
+    ne doit figurer sur l'événement. Le label affiche les dimensions-clés
+    (ex. <em>NETWORK-EST | Activity 26</em>).
+    Filtres spécifiques : <strong>type d'arbre</strong> et <strong>dates de l'événement</strong>
+    (commence/finit avant/après le, actif le…).
+</p>
+
+<h3>Sous-onglet « Autres »</h3>
+<p>
+    Historique de configuration : exports, imports, filtres VP, formulaires, etc.
+    Filtre spécifique : <strong>type</strong>.
+</p>
+
+<h3>Panneau de détail</h3>
+<p>
+    Un clic sur n'importe quelle ligne affiche le détail des propriétés modifiées
+    dans le panneau du bas. Les modifications simultanées (batch, imports…) sont
+    regroupées par date et utilisateur avec un en-tête coloré.
+</p>
+
+<div class="info-box">
+    <strong>💡 Note :</strong> L'onglet Historique reste vide si le fichier importé
+    est un <code>.vpi</code> — seuls les <code>.vps</code> contiennent des données historiques.
+</div>
+
+</body>
+</html>

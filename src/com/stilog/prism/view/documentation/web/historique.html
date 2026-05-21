@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<h1>Onglet « Historique »</h1>
+
+<p>
+    L'onglet <strong>Historique</strong> permet d'explorer l'intégralité des modifications
+    enregistrées dans un fichier <code>.vps</code> — qui conserve automatiquement toute
+    l'activité : création, modification et suppression de ressources, d'événements et
+    d'éléments de configuration.
+</p>
+
+<div class="info-box">
+    <strong>💡 Note :</strong> L'onglet Historique est uniquement disponible pour les fichiers
+    <code>.vps</code>. Les fichiers <code>.vpi</code> ne contiennent pas de données historiques.
+</div>
+
+<!-- CHARGEMENT -->
+<h2>Chargement</h2>
+<p>
+    Au chargement d'un fichier VPS, l'historique est traité en arrière-plan en plusieurs étapes :
+</p>
+<ol>
+    <li>Extraction des fichiers <code>history.txt</code> et <code>historytracker.txt</code></li>
+    <li>Résolution des noms lisibles depuis le VPS (dimensions, événements, arbres de création)</li>
+    <li>Lecture de <code>history.txt</code> — chaque ligne représente une modification</li>
+    <li>Indexation en streaming de <code>historytracker.txt</code> — le détail des propriétés
+        modifiées est chargé à la demande au clic, sans jamais tout charger en mémoire</li>
+</ol>
+<p>
+    Cette approche permet de gérer des fichiers <code>historytracker.txt</code> de plusieurs
+    gigaoctets sans impact sur les performances.
+</p>
+
+<!-- FILTRES COMMUNS -->
+<h2>Filtres communs</h2>
+<p>
+    La barre de filtres en haut s'applique à <strong>tous les sous-onglets</strong> simultanément :
+</p>
+<ul>
+    <li><strong>Recherche globale</strong> — filtre par nom, type, utilisateur ou identifiant</li>
+    <li><strong>Modifié par</strong> — filtre sur l'utilisateur ayant effectué la dernière modification</li>
+    <li><strong>Créé par</strong> — filtre sur l'utilisateur ayant créé l'entrée</li>
+    <li><strong>Modifié / Créé</strong> — filtres de date avec les opérateurs :
+        <em>le</em>, <em>après le</em>, <em>avant le</em>,
+        <em>cette semaine</em>, <em>ce mois</em>, <em>cette année</em></li>
+    <li><strong>Afficher supprimés</strong> — par défaut, les entrées dont l'entité
+        n'existe plus dans le VPS sont masquées ; cochez cette option pour les afficher
+        (elles apparaissent en italique grisé)</li>
+</ul>
+
+<div class="tip">
+    <strong>✅ Astuce :</strong> Le bouton <strong>↺ Tout réinitialiser</strong> remet
+    à zéro tous les filtres communs et spécifiques en une seule action.
+</div>
+
+<!-- SOUS-ONGLETS -->
+<h2>Sous-onglets</h2>
+
+<h3>Dimensions</h3>
+<p>
+    Affiche l'historique des ressources (<em>EventResourceX</em>). Le nom de chaque ressource
+    est résolu depuis le VPS : les rubriques d'identification du modèle de dimension sont
+    utilisées pour afficher un label lisible (ex. <em>5200, M6-1.00 X 25mm LG BHCS</em>
+    au lieu d'un identifiant technique). Le type affiché est le <strong>nom de la dimension</strong>
+    (ex. <em>OUTSOURCE</em>, <em>NETWORK ACTIVITIES</em>) plutôt que le nom de table interne.
+</p>
+<p>Filtres spécifiques :</p>
+<ul>
+    <li><strong>Dimension</strong> — filtre par nom de dimension</li>
+    <li><strong>☑ Afficher supprimées</strong> — identique au filtre global (synchronisé)</li>
+</ul>
+
+<h3>Événements</h3>
+<p>
+    Affiche l'historique des <em>PlanningEvent</em>. Chaque événement est identifié
+    automatiquement par son <strong>arbre de création</strong> (défini dans
+    <code>eventtreestruct.txt</code>) grâce à la règle : toutes les dimensions obligatoires
+    de l'arbre doivent être renseignées sur l'événement, et l'événement ne doit comporter
+    aucune dimension étrangère à cet arbre.
+</p>
+<p>
+    Le label affiché correspond aux dimensions-clés de l'arbre identifié
+    (ex. <em>NETWORK-EST | Activity 26 | WBS-123</em>).
+</p>
+<p>Filtres spécifiques :</p>
+<ul>
+    <li><strong>Type d'arbre</strong> — filtre par arbre de création
+        (ex. <em>05. Work Order Activity</em>)</li>
+    <li><strong>Date event</strong> — filtre sur les dates de début/fin de l'événement :
+        <em>commence après le</em>, <em>commence avant le</em>,
+        <em>finit après le</em>, <em>finit avant le</em>,
+        <em>actif le</em>, <em>cette semaine</em>, <em>ce mois</em></li>
+</ul>
+
+<h3>Autres</h3>
+<p>
+    Regroupe les modifications de configuration : exports, imports, filtres VP,
+    formulaires, modèles d'éditeur, etc.
+</p>
+<p>Filtre spécifique :</p>
+<ul>
+    <li><strong>Type</strong> — filtre par type d'élément de configuration</li>
+</ul>
+
+<!-- PANNEAU DETAIL -->
+<h2>Panneau de détail</h2>
+<p>
+    Cliquez sur une ligne dans n'importe quel sous-onglet pour afficher le détail
+    des modifications dans le panneau du bas. Chaque modification est groupée par
+    date et utilisateur — une ligne d'en-tête (fond légèrement coloré) sépare
+    les groupes de modifications simultanées (batch, imports automatiques…).
+</p>
+<p>Le tableau détaille pour chaque modification :</p>
+<ul>
+    <li><strong>#</strong> — numéro de la modification dans la séquence</li>
+    <li><strong>Date</strong> — horodatage de la modification</li>
+    <li><strong>Utilisateur</strong> — auteur de la modification</li>
+    <li><strong>Propriété</strong> — nom du champ modifié</li>
+    <li><strong>Ancienne valeur</strong> — valeur avant modification</li>
+    <li><strong>Nouvelle valeur</strong> — valeur après modification</li>
+</ul>
+
+<div class="info-box">
+    <strong>💡 Performance :</strong> Le contenu du panneau de détail est chargé
+    <em>à la demande</em> uniquement au moment du clic — il n'est jamais pré-chargé
+    en mémoire pour l'ensemble de l'historique.
+</div>
+
+<div class="warning-box">
+    <strong>⚠ Attention :</strong> Si aucune modification détaillée n'apparaît pour
+    une entrée, c'est que cette entrée n'a pas de données dans
+    <code>historytracker.txt</code> — ce qui est normal pour certains types
+    de modifications (créations initiales, imports batch…).
+</div>
+
+</body>
+</html>

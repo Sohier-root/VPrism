@@ -124,6 +124,6 @@ public class ThemeManager {
     }
 
     private void notifyListeners() {
-        for (Runnable r : listeners) r.run();
+        for (Runnable r : new java.util.ArrayList<>(listeners)) r.run();
     }
 }

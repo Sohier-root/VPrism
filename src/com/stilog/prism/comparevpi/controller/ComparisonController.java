@@ -5,13 +5,9 @@ import java.util.concurrent.CompletableFuture;
 
 import com.stilog.prism.comparevpi.model.ComparisonModel;
 import com.stilog.prism.comparevpi.model.comparator.VPIComparator;
-import com.stilog.prism.comparevpi.model.dto.MergeRequest;
 import com.stilog.prism.comparevpi.utils.AsyncDecompressor;
-import com.stilog.prism.vpimodel.objects.Entity;
-import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeFile;
 import com.stilog.prism.vpimodel.objects.VPIDatas;
-import com.stilog.prism.vpimodel.vpsettings.FileDatas;
 
 public class ComparisonController {
 
@@ -74,74 +70,5 @@ public class ComparisonController {
 	
 	public void performReverse() {
 		model.reverse();
-	}
-	
-	/**
-	 * Méthode unifiée pour gérer toutes les opérations de merge
-	 * Retourne les données mises à jour
-	 * @throws Exception 
-	 */
-	public VPIDatas performMerge(MergeRequest request) throws Exception {
-	    switch (request.getType()) {
-	        case MERGE_PARAMETER:
-	            return mergeParameter(
-	                request.getFileData(),
-	                request.getEntity(),
-	                request.getParameter(),
-	                null
-	            );
-	            
-	        case MERGE_ENTITY:
-	            return mergeEntity(
-	                request.getFileData(),
-	                request.getEntity(),
-	                null
-	            );
-	            
-	        case REPLACE_PARAMETER:
-	            return mergeParameter(
-	                request.getFileData(),
-	                request.getEntity(),
-	                request.getParameter(),
-	                (Parameters) request.getTargetObject()
-	            );
-	            
-	        case REPLACE_ENTITY:
-	            return mergeEntity(
-	                request.getFileData(),
-	                request.getEntity(),
-	                (Entity) request.getTargetObject()
-	            );
-	            
-	        default:
-	            throw new IllegalArgumentException("Type de merge non supporté: " + request.getType());
-	    }
-	}
-	
-	private VPIDatas mergeParameter(FileDatas file, Entity entity, Parameters parameter,
-			Parameters parameterToReplace) throws Exception {
-		VPIDatas rightDatas = model.getData(TypeFile.COMPARISON_RIGHT);
-
-		if (rightDatas == null) {
-			throw new IllegalStateException("Aucune donnée RIGHT disponible pour le merge");
-		}
-
-		rightDatas.mergeParameter(file, entity, parameter, parameterToReplace);
-		return rightDatas;
-	}
-
-	private VPIDatas mergeEntity(FileDatas file, Entity entity, Entity entityToReplace) throws Exception {
-		VPIDatas rightDatas = model.getData(TypeFile.COMPARISON_RIGHT);
-
-		if (rightDatas == null) {
-			throw new IllegalStateException("Aucune donnée RIGHT disponible pour le merge");
-		}
-
-		rightDatas.mergeEntity(file, entity, entityToReplace);
-		return rightDatas;
-	}
-
-	public void performGenerateVPI(String outputPath) {
-		this.model.getData(TypeFile.COMPARISON_RIGHT).generateMergedFiles(outputPath);
 	}
 }

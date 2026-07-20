@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.stilog.prism.vpimodel.objects.filter.FilterGroupNode;
+import com.stilog.prism.vpimodel.objects.filter.FilterLeafNode;
+import com.stilog.prism.vpimodel.objects.filter.FilterNode;
 import com.visualplanning.vpi.model.VpiPlanning;
 import com.visualplanning.vpi.model.dimension.Dimension;
 import com.visualplanning.vpi.model.filter.FilterCondition;
@@ -51,6 +54,45 @@ public class FilterConditionFormatter {
 
 	public static String formatAll(List<FilterCondition> conditions) {
 		return conditions.stream().map(FilterConditionFormatter::format).collect(Collectors.joining(" ; "));
+	}
+
+	/**
+	 * Convertit directement un arbre {@link FilterCondition} VPIReader vers le modèle
+	 * d'affichage de VPrism ({@link FilterGroupNode}/{@link FilterLeafNode}), sans repasser
+	 * par du texte — utilisé par le dialogue de détail de filtre et la comparaison sémantique.
+	 *
+	 * Limitation connue : pour les conditions "liste de valeurs" (IN sur plusieurs ressources),
+	 * INFILTER (référence à un autre filtre) et ISA (référence à une hiérarchie), VPIReader
+	 * n'expose la valeur qu'en texte brut non séparé/non résolu (contrairement à l'ancien
+	 * parsing XML) : l'affichage de ces 3 cas reste dégradé jusqu'à ce que VPIReader structure
+	 * cette donnée.
+	 */
+	public static FilterGroupNode toFilterGroupNode(FilterCondition condition) {
+		if (condition instanceof FilterCondition.LogicGroup g) {
+			FilterGroupNode node = new FilterGroupNode(g.operator());
+			for (FilterCondition child : g.conditions())
+				node.addChild(toFilterNode(child));
+			return node;
+		}
+		FilterGroupNode wrapper = new FilterGroupNode("AND");
+		wrapper.addChild(toFilterNode(condition));
+		return wrapper;
+	}
+
+	private static FilterNode toFilterNode(FilterCondition condition) {
+		if (condition instanceof FilterCondition.LogicGroup g)
+			return toFilterGroupNode(g);
+		if (condition instanceof FilterCondition.EventAttributeCondition c)
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
+		if (condition instanceof FilterCondition.ResourceAttributeCondition c)
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
+		if (condition instanceof FilterCondition.HistoryCondition c)
+			return new FilterLeafNode("Historique." + c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
+		if (condition instanceof FilterCondition.FormAttributeCondition c)
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
+		if (condition instanceof FilterCondition.EventFilterCondition c)
+			return new FilterLeafNode(c.conditionType().name(), c.operator(), c.filterValue() != null ? c.filterValue() : "", false);
+		return new FilterLeafNode(condition.toString(), "", "", false);
 	}
 
 	/**

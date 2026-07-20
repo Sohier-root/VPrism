@@ -2,15 +2,10 @@ package com.stilog.prism.vpimodel.objects;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.lang.reflect.Field;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.stilog.prism.comparevpi.utils.Compressor;
 import com.stilog.prism.comparevpi.utils.Decompressor;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.stilog.prism.vpimodel.vpsettings.CreationRule;
@@ -31,7 +26,6 @@ public class VPIDatas {
 	private static final String OUTPUT_DIR = System.getProperty("java.io.tmpdir") + "vpcompare/";
 	private static final String OUTPUT_DIR_COMPARISON_TESTED = OUTPUT_DIR + "comparison/tested/";
 	private static final String OUTPUT_DIR_COMPARISON_REF    = OUTPUT_DIR + "comparison/ref/";
-	private static final String OUTPUT_DIR_COMPARISON_MERGED = OUTPUT_DIR + "comparison/merged/";
 	private static final String OUTPUT_DIR_DOC               = OUTPUT_DIR + "documentation/";
 	/** Répertoire dédié au Module 2 (VPI unique). */
 	private static final String OUTPUT_DIR_SINGLE            = OUTPUT_DIR + "single/";
@@ -118,8 +112,7 @@ public class VPIDatas {
 		/*
 		 * Parse VPIReader du même fichier .vpi/.vps (en mémoire, sans passer par filesDir) :
 		 * fournit le graphe typé et déjà résolu que les FileDatas migrées consomment dans
-		 * leur parseXml(Entity) à la place du DOM-walk manuel. Le XML brut par ligne reste
-		 * lu depuis filesDir par FileDatas.parseDatas() pour la fusion (Entity.generateXml()).
+		 * leur buildParameters(Entity) à la place du DOM-walk manuel.
 		 */
 		VpiPlanning planning = null;
 		try {
@@ -229,34 +222,6 @@ public class VPIDatas {
 		}
 	}
 	
-	public void generateMergedFiles(String outputPathVpi) {
-		File outputDirFile = new File(OUTPUT_DIR_COMPARISON_MERGED);
-		if(outputDirFile.exists())
-			outputDirFile.delete();
-		outputDirFile.mkdir();
-		
-		try {
-			List<FileDatas> refFiles = this.getFilesDatas();
-			for(int i = 0; i<refFiles.size(); i++) {
-				refFiles.get(i).generateFile(OUTPUT_DIR_COMPARISON_MERGED);
-			}
-			
-			File vpiFileDir = new File(OUTPUT_DIR_COMPARISON_TESTED);
-			for(File vpiFile : vpiFileDir.listFiles()) {
-				File mergedFile = new File(OUTPUT_DIR_COMPARISON_MERGED + vpiFile.getName());
-				if(!mergedFile.exists()) {
-					Files.copy(Path.of(vpiFile.toURI()), new FileOutputStream(mergedFile));
-				}
-			}
-			
-			File destFile = new File(new File(outputPathVpi, fileName).getAbsolutePath().replace(".vpi", "_merged.vpi").replace(".vps", "_merged.vps"));
-			Compressor.zip(outputDirFile, destFile);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	/**
 	 * Remet a zéro les données de comparaison
 	 */
@@ -284,48 +249,6 @@ public class VPIDatas {
 	    }
 
 	    return result;
-	}
-	
-	public void mergeParameter(FileDatas file, Entity entity, Parameters parameter, Parameters parameterToReplace) throws Exception {	
-		this.getFileDatasFromThis(file).mergeParameter(entity, parameter, parameterToReplace);
-	}
-	
-	public void mergeEntity(FileDatas file, Entity entity, Entity entityToReplace) throws Exception {
-		this.getFileDatasFromThis(file).mergeEntity(entity, entityToReplace);
-	}
-	
-	private FileDatas getFileDatasFromThis(FileDatas file){
-		switch(file.getFileName()) {
-		case VPIConstants.FILENAME_RESOURCE_MODEL:
-			return resourceModel;
-			
-		case VPIConstants.FILENAME_RESOURCES_FILTER:
-			return resourceFilter;
-			
-		case VPIConstants.FILENAME_EVENTS_FILTER:
-			return eventFilter;
-			
-		case VPIConstants.FILENAME_RESOURCES_EXPORT:
-			return exportResources;
-			
-		case VPIConstants.FILENAME_EVENTS_EXPORT:
-			return exportEvents;
-			
-		case VPIConstants.FILENAME_RESOURCES_IMPORT:
-			return importResources;
-			
-		case VPIConstants.FILENAME_EVENTS_IMPORT:
-			return importEvents;
-			
-		case VPIConstants.FILENAME_EVENTS_STRUCT:
-			return hierarchies;
-			
-		case VPIConstants.FILENAME_FORM_MODEL:
-			return formModel;
-			
-		default:
-			return null;
-		}
 	}
 	
 	public String getName() {

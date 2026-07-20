@@ -3,7 +3,6 @@ package com.stilog.prism.vpimodel.vpsettings;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
@@ -11,7 +10,6 @@ import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeData;
 import com.stilog.prism.vpimodel.reader.PropertyLabels;
-import com.stilog.prism.vpimodel.reader.RawFragmentIndexer;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.visualplanning.vpi.model.dimension.Heading;
 import com.visualplanning.vpi.model.dimension.heading.HeadingMultiChoice;
@@ -28,9 +26,7 @@ public class FormModel extends FileDatas {
     // ── Parsing (via VPIReader) ─────────────────────────────────────────────
 
     @Override
-    protected List<Parameters> parseXml(Entity entity) {
-        entity.setMergeable(true);
-        entity.setReplaceable(true);
+    protected List<Parameters> buildParameters(Entity entity) {
         entity.setTypeData(TypeData.FORM);
 
         com.visualplanning.vpi.model.form.FormModel form = findForm(entity.getId());
@@ -39,9 +35,6 @@ public class FormModel extends FileDatas {
             return new ArrayList<>();
         }
 
-        entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(form.getId()));
-        entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, form.getUid());
-
         GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
         gCorr.addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(form.getId()), entity.getName());
         gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, form.getUid(), entity.getName());
@@ -49,7 +42,7 @@ public class FormModel extends FileDatas {
 
         entity.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS, form.getDescription().getDisplayValue());
 
-        return computeHeadings(entity, form);
+        return computeHeadings(form);
     }
 
     private com.visualplanning.vpi.model.form.FormModel findForm(int id) {
@@ -61,32 +54,16 @@ public class FormModel extends FileDatas {
     }
 
     /** Même logique que {@code ResourceModel.computeHeadings()}, adaptée aux formulaires. */
-    private List<Parameters> computeHeadings(Entity entity, com.visualplanning.vpi.model.form.FormModel form) {
+    private List<Parameters> computeHeadings(com.visualplanning.vpi.model.form.FormModel form) {
         List<Parameters> headings = new ArrayList<>();
-        Map<String, String> rawFragments = RawFragmentIndexer.fragmentsById(
-                entity.getAssociatedXml(), VPIConstants.XML_TAG_HEADINGS, VPIConstants.XML_TAG_ID);
 
         for (Heading heading : form.getHeadings()) {
             Parameters param = new Parameters(heading.getName());
-            param.setParentTag(VPIConstants.XML_TAG_HEADINGS);
             param.setUid(heading.getUid());
-
-            boolean isComputed = PropertyLabels.isComputed(heading.getHeadingType());
-            param.setMergeable(!isComputed);
-            param.setReplaceable(!isComputed);
-
-            param.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()));
-            param.addUniqueAttributes(VPIConstants.XML_TAG_UID, heading.getUid());
 
             GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
             gCorr.addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()), heading.getName());
             gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, heading.getUid(), heading.getName());
-
-            String rawFragment = rawFragments.get(String.valueOf(heading.getId()));
-            if (rawFragment != null) {
-                param.setInitialXml(rawFragment);
-                param.setAssociatedXml(rawFragment);
-            }
 
             param.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
             param.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));

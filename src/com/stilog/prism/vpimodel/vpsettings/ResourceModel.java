@@ -3,7 +3,6 @@ package com.stilog.prism.vpimodel.vpsettings;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
@@ -11,7 +10,6 @@ import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeData;
 import com.stilog.prism.vpimodel.reader.PropertyLabels;
-import com.stilog.prism.vpimodel.reader.RawFragmentIndexer;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.visualplanning.vpi.model.dimension.Dimension;
 import com.visualplanning.vpi.model.dimension.Heading;
@@ -29,7 +27,7 @@ public class ResourceModel extends FileDatas{
 
 	/**
 	 * Surcharge de parseDatas pour pré-enregistrer tous les noms de dimensions
-	 * dans GeneralCorrespondance AVANT le parseXml().
+	 * dans GeneralCorrespondance AVANT le buildParameters().
 	 *
 	 * Sans ce pré-enregistrement, une rubrique de type ResourceReference qui
 	 * pointe vers une dimension parsée plus tard dans le fichier ne trouve pas
@@ -67,9 +65,7 @@ public class ResourceModel extends FileDatas{
 	 * PARSE (via VPIReader)
 	 */
 	@Override
-	protected List<Parameters> parseXml(Entity entity) {
-		entity.setMergeable(true);
-		entity.setReplaceable(true);
+	protected List<Parameters> buildParameters(Entity entity) {
 		entity.setTypeData(TypeData.DIMENSION);
 
 		Dimension dim = findDimension(entity.getId());
@@ -79,9 +75,6 @@ public class ResourceModel extends FileDatas{
 		}
 
 		List<Parameters> paramList = new ArrayList<>();
-
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(dim.getId()));
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, dim.getUid());
 
 		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(dim.getId()), entity.getName());
 		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, dim.getUid(), entity.getName());
@@ -107,7 +100,7 @@ public class ResourceModel extends FileDatas{
 		/*
 		 * Rubriques (headings)
 		 */
-		paramList.addAll(computeHeadings(entity, dim));
+		paramList.addAll(computeHeadings(dim));
 		paramList.addAll(computeImportantHeadings(entity, dim));
 
 		return paramList;
@@ -121,30 +114,17 @@ public class ResourceModel extends FileDatas{
 		return null;
 	}
 
-	private List<Parameters> computeHeadings(Entity entity, Dimension dim) {
+	private List<Parameters> computeHeadings(Dimension dim) {
 		List<Parameters> headings = new ArrayList<>();
-		Map<String, String> rawFragments = RawFragmentIndexer.fragmentsById(
-				entity.getAssociatedXml(), VPIConstants.XML_TAG_HEADINGS, VPIConstants.XML_TAG_ID);
 
 		for (Heading heading : dim.getHeadings()) {
 			Parameters newParam = new Parameters(heading.getName());
-			newParam.setMergeable(true);
-			newParam.setReplaceable(true);
-			newParam.setParentTag(VPIConstants.XML_TAG_HEADINGS);
 			newParam.setUid(heading.getUid());
 			newParam.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
 			newParam.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));
 
-			newParam.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()));
 			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()), heading.getName());
-			newParam.addUniqueAttributes(VPIConstants.XML_TAG_UID, heading.getUid());
 			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, heading.getUid(), heading.getName());
-
-			String rawFragment = rawFragments.get(String.valueOf(heading.getId()));
-			if (rawFragment != null) {
-				newParam.setInitialXml(rawFragment);
-				newParam.setAssociatedXml(rawFragment);
-			}
 
 			// Propriétés déjà rendues sous forme d'attribut visible : à exclure des attributs cachés.
 			Set<Property> alreadyShown = new HashSet<>();
@@ -152,7 +132,6 @@ public class ResourceModel extends FileDatas{
 			if (heading instanceof HeadingResourceReference ref) {
 				alreadyShown.add(ref.getReferencedDimension());
 				if (ref.getReferencedDimension().getEntityId() != -1) {
-					entity.addResourceModelAttributes(String.valueOf(ref.getReferencedDimension().getEntityId()));
 					newParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, ref.getReferencedDimension().getDisplayValue());
 				}
 			}
@@ -189,9 +168,6 @@ public class ResourceModel extends FileDatas{
 
 	private Parameters headingRefParameters(Entity entity, String parameterName, PropertyList<Integer> ids, Dimension dim, boolean alsoHidden) {
 		Parameters param = new Parameters(parameterName);
-		param.setReplaceable(true);
-		param.setEditableName(false);
-		param.setDocumentable(false);
 
 		List<Integer> idList = ids != null ? ids.getValue() : List.of();
 		List<String> names = new ArrayList<>();

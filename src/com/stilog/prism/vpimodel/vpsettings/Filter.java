@@ -9,6 +9,7 @@ import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.visualplanning.vpi.model.filter.FilterCondition;
 import com.visualplanning.vpi.model.filter.VpiFilter;
 
 public class Filter extends FileDatas{
@@ -36,24 +37,17 @@ public class Filter extends FileDatas{
 	 * PARSE (via VPIReader)
 	 */
 	@Override
-	protected List<Parameters> parseXml(Entity entity) {
+	protected List<Parameters> buildParameters(Entity entity) {
 
 		List<Parameters> paramList = new ArrayList<>();
 
-		Optional<VpiFilter> found = isEventFilter()
-				? this.planning.getFilterSet().eventFilterById(entity.getId())
-				: this.planning.getFilterSet().resourceFilterById(entity.getId());
+		Optional<VpiFilter> found = findFilter(entity.getId());
 
 		if (found.isEmpty()) {
 			System.out.println("Filtre introuvable pour l'entité id=" + entity.getId());
 			return paramList;
 		}
 		VpiFilter filter = found.get();
-
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(filter.getId()));
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, filter.getUid());
-		entity.setReplaceable(true);
-		entity.setMergeable(true);
 
 		/*
 		 * Enregistrement dans GeneralCorrespondance pour résolution INFILTER
@@ -63,7 +57,6 @@ public class Filter extends FileDatas{
 			filterCorrespondanceKey, String.valueOf(filter.getId()), entity.getName());
 
 		Parameters newParam = new Parameters(filter.getName().getDisplayValue());
-		newParam.setReplaceable(true);
 		newParam.addAttributes(VPIConstants.PARAMETER_CONDITIONS, FilterConditionFormatter.format(filter.getRootCondition()));
 		newParam.addHiddenAttributes(VPIConstants.PARAMETER_REF_DIMENSIONS,
 				String.join(", ", FilterConditionFormatter.referencedDimensionNames(filter.getRootCondition(), this.planning)));
@@ -71,6 +64,20 @@ public class Filter extends FileDatas{
 		paramList.add(newParam);
 
 		return paramList;
+	}
+
+	private Optional<VpiFilter> findFilter(int entityId) {
+		return isEventFilter()
+				? this.planning.getFilterSet().eventFilterById(entityId)
+				: this.planning.getFilterSet().resourceFilterById(entityId);
+	}
+
+	/**
+	 * Condition typée d'un filtre, pour l'affichage interactif (dialogue de détail,
+	 * comparaison sémantique) sans repasser par le texte de {@code PARAMETER_CONDITIONS}.
+	 */
+	public Optional<FilterCondition.LogicGroup> getRootCondition(Entity entity) {
+		return findFilter(entity.getId()).map(VpiFilter::getRootCondition);
 	}
 
 }

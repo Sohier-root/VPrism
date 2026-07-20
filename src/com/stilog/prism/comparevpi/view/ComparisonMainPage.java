@@ -10,7 +10,6 @@ import org.kordamp.ikonli.swing.FontIcon;
 
 import com.stilog.prism.comparevpi.controller.ComparisonController;
 import com.stilog.prism.comparevpi.utils.SystemInfo;
-import com.stilog.prism.comparevpi.view.loading.LoadingIcon;
 import com.stilog.prism.comparevpi.view.loading.LoadingWindow;
 import com.stilog.prism.comparevpi.view.object.VButton;
 import com.stilog.prism.comparevpi.view.tree.VPITree;
@@ -28,7 +27,6 @@ public class ComparisonMainPage extends JPanel {
     private static final String TOOLTIP_DESYNCHRONIZE   = "Désynchroniser les affichages";
     private static final String TOOLTIP_DISPLAY_DIFFONLY = "Afficher seulement les différences";
     private static final String TOOLTIP_DISPLAY_ALL     = "Tout afficher";
-    private static final String TOOLTIP_GENERATE_VPI    = "Générer un nouveau VPI/VPS";
     private static final String TOOLTIP_REVERSE         = "Intervertir les affichages";
 
     private final ThemeManager theme = ThemeManager.getInstance();
@@ -52,11 +50,7 @@ public class ComparisonMainPage extends JPanel {
     private VButton compareBtn;
     private JToggleButton synchronizeBtn;
     private JToggleButton diffOnlyBtn;
-    private JButton generateFilesBtn;
     private JButton reverseDatasBtn;
-
-    private FontIcon generateFilesIconNormal;
-    private LoadingIcon generateFilesIconLoading;
 
     public ComparisonMainPage(ComparisonController controller, JFrame parentFrame) {
         this.controller = controller;
@@ -76,7 +70,6 @@ public class ComparisonMainPage extends JPanel {
 
         initSynchro();
         initializeDiffOnlyToggle();
-        initializeGenerateFiles();
         initializeReverseDatas();
 
         // Mettre à jour les icônes toolbar au changement de thème
@@ -85,11 +78,6 @@ public class ComparisonMainPage extends JPanel {
 
     private void refreshToolbarIcons() {
         reverseDatasBtn.setIcon(FontIcon.of(MaterialDesign.MDI_SWAP_HORIZONTAL, 18, theme.text()));
-        generateFilesIconNormal = FontIcon.of(MaterialDesign.MDI_FILE_CHECK, 18, new Color(130, 220, 160));
-        // Ne remplacer l'icône de generateFilesBtn que s'il n'est pas en train de charger
-        if (generateFilesBtn.getIcon() != generateFilesIconLoading) {
-            generateFilesBtn.setIcon(generateFilesIconNormal);
-        }
         // synchronizeBtn : l'icône dépend de l'état sélectionné
         MaterialDesign syncIcon = synchronizeBtn.isSelected()
             ? MaterialDesign.MDI_SYNC : MaterialDesign.MDI_SYNC_OFF;
@@ -209,17 +197,10 @@ public class ComparisonMainPage extends JPanel {
         this.diffOnlyBtn    = createToolbarToggleButton(MaterialDesign.MDI_VECTOR_DIFFERENCE, TOOLTIP_DISPLAY_DIFFONLY);
         this.diffOnlyBtn.setEnabled(false);
 
-        this.generateFilesIconNormal  = FontIcon.of(MaterialDesign.MDI_FILE_CHECK, 18, new Color(130, 220, 160));
-        this.generateFilesIconLoading = new LoadingIcon();
-        this.generateFilesBtn = createToolbarButton(MaterialDesign.MDI_FILE_CHECK, TOOLTIP_GENERATE_VPI);
-        this.generateFilesBtn.setIcon(generateFilesIconNormal);
-        this.generateFilesBtn.setEnabled(false);
-
         this.reverseDatasBtn = createToolbarButton(MaterialDesign.MDI_SWAP_HORIZONTAL, TOOLTIP_REVERSE);
 
         bar.add(diffOnlyBtn);
         bar.add(synchronizeBtn);
-        bar.add(generateFilesBtn);
         bar.add(reverseDatasBtn);
         return bar;
     }
@@ -416,15 +397,6 @@ public class ComparisonMainPage extends JPanel {
         }
     }
 
-    private String chooseVPIFolder() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setDialogTitle("Dossier cible");
-        int res = chooser.showOpenDialog(this);
-        if (res == JFileChooser.APPROVE_OPTION) return chooser.getSelectedFile().getAbsolutePath();
-        return null;
-    }
-
     public void processFile(boolean isLeft) {
         try {
             if (isLeft) {
@@ -440,14 +412,12 @@ public class ComparisonMainPage extends JPanel {
                     JOptionPane.showMessageDialog(this, "Aucun fichier sélectionné (droite).", "Erreur", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
-                setGenerateFilesButtonLoading(true);
                 diffOnlyBtn.setSelected(false);
                 diffOnlyBtn.setEnabled(false);
                 treeRight.update(controller.handleFile(rightSelectedFile, TypeFile.COMPARISON_RIGHT), diffOnlyBtn.isSelected());
                 treeLeft.update(controller.getVPIData(TypeFile.COMPARISON_LEFT), diffOnlyBtn.isSelected());
                 controller.getCompleteUnzipFuture(rightSelectedFile, TypeFile.COMPARISON_RIGHT)
                     .thenAccept(success -> SwingUtilities.invokeLater(() -> {
-                        setGenerateFilesButtonLoading(false);
                         if (!success) System.err.println("Erreur lors du dézipage complet");
                     }));
             }
@@ -456,18 +426,6 @@ public class ComparisonMainPage extends JPanel {
                 this.compareBtn.setEnabled(true);
             }
         } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    private void setGenerateFilesButtonLoading(boolean loading) {
-        if (loading) {
-            generateFilesBtn.setEnabled(false);
-            generateFilesBtn.setIcon(generateFilesIconLoading);
-            generateFilesIconLoading.start(generateFilesBtn);
-        } else {
-            generateFilesIconLoading.stop();
-            generateFilesBtn.setIcon(generateFilesIconNormal);
-            generateFilesBtn.setEnabled(false);
-        }
     }
 
     private void initSynchro() {
@@ -523,14 +481,6 @@ public class ComparisonMainPage extends JPanel {
             diffOnlyBtn.setToolTipText(e.getStateChange() == ItemEvent.SELECTED
                 ? TOOLTIP_DISPLAY_ALL : TOOLTIP_DISPLAY_DIFFONLY);
             treeLeft.update(controller.getVPIData(TypeFile.COMPARISON_LEFT), diffOnlyBtn.isSelected());
-        });
-    }
-
-    private void initializeGenerateFiles() {
-        this.generateFilesBtn.addActionListener(e -> {
-            String out = chooseVPIFolder();
-            if (generateFilesBtn.isEnabled() && out != null)
-                LoadingWindow.run(parentFrame, () -> controller.performGenerateVPI(out));
         });
     }
 

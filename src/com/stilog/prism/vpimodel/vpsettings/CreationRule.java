@@ -15,7 +15,7 @@ public class CreationRule extends FileDatas {
 	}
 
 	@Override
-	protected List<Parameters> parseXml(Entity entity) {
+	protected List<Parameters> buildParameters(Entity entity) {
 		GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
 		gCorr.addCorrespondance(VPIConstants.XML_TAG_CREATION_RULE, String.valueOf(entity.getId()), entity.getName());
 		return null;

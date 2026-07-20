@@ -6,7 +6,6 @@ import java.util.List;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
-import com.stilog.prism.vpimodel.reader.RawFragmentIndexer;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.visualplanning.vpi.model.filter.VpiFilter;
 import com.visualplanning.vpi.model.hierarchy.EventHierarchy;
@@ -23,7 +22,7 @@ public class Hierarchies extends FileDatas {
 	 * PARSE (via VPIReader)
 	 */
 	@Override
-	protected List<Parameters> parseXml(Entity entity) {
+	protected List<Parameters> buildParameters(Entity entity) {
 		List<Parameters> paramList = new ArrayList<>();
 
 		EventHierarchy hierarchy = findHierarchy(entity.getId());
@@ -32,27 +31,14 @@ public class Hierarchies extends FileDatas {
 			return paramList;
 		}
 
-		entity.setMergeable(true);
-		entity.setReplaceable(true);
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(hierarchy.getId()));
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, hierarchy.getUid());
-
 		List<ResourceModelNodeEntry> entries = flatten(hierarchy.getRootNode());
-		List<String> rawFragments = RawFragmentIndexer.fragmentsByOrder(entity.getAssociatedXml(), VPIConstants.XML_TAG_MODEL_STRUCT);
 
-		for (int i = 0; i < entries.size(); i++) {
-			ResourceModelNodeEntry entry = entries.get(i);
+		for (ResourceModelNodeEntry entry : entries) {
 			String resourceName = entry.getResourceModel().getDisplayValue();
 
 			Parameters param = new Parameters(resourceName);
-			if (i < rawFragments.size()) {
-				param.setInitialXml(rawFragments.get(i));
-				param.setAssociatedXml(rawFragments.get(i));
-			}
 			param.addAttributes(VPIConstants.PARAMETER_CONDITIONS, conditionsText(entry));
 			param.addAttributes(VPIConstants.PARAMETER_MANDATORY, entry.getMandatory().getDisplayValue());
-			param.setMergeable(true);
-			param.setReplaceable(true);
 			paramList.add(param);
 		}
 

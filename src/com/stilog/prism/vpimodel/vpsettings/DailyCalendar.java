@@ -15,7 +15,7 @@ public class DailyCalendar extends FileDatas {
 	}
 
 	@Override
-	protected List<Parameters> parseXml(Entity entity) {
+	protected List<Parameters> buildParameters(Entity entity) {
 		GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
 		String name = entity.getName();
 

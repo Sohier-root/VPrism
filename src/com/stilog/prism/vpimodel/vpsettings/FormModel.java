@@ -1,33 +1,31 @@
 package com.stilog.prism.vpimodel.vpsettings;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import com.stilog.prism.comparevpi.utils.MethodUtil;
+import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeData;
+import com.stilog.prism.vpimodel.reader.PropertyLabels;
+import com.stilog.prism.vpimodel.reader.RawFragmentIndexer;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.visualplanning.vpi.model.dimension.Heading;
+import com.visualplanning.vpi.model.dimension.heading.HeadingMultiChoice;
+import com.visualplanning.vpi.model.dimension.heading.HeadingResourceReference;
+import com.visualplanning.vpi.model.dimension.heading.HeadingUniqueChoice;
+import com.visualplanning.vpi.model.property.Property;
 
 public class FormModel extends FileDatas {
-
-    /** Types de headings considérés comme "calculés" → non-mergeables. */
-    private static final java.util.Set<String> COMPUTED_TYPES = java.util.Set.of(
-        "ControlColumn",
-        "HeadingOperation",
-        "StringHeadingOperation",
-        "StringControlColumn"
-    );
 
     public FormModel(String filePath, String name) {
         super(filePath, name);
     }
 
-    // ── Parsing XML ──────────────────────────────────────────────────────────
+    // ── Parsing (via VPIReader) ─────────────────────────────────────────────
 
     @Override
     protected List<Parameters> parseXml(Entity entity) {
@@ -35,156 +33,87 @@ public class FormModel extends FileDatas {
         entity.setReplaceable(true);
         entity.setTypeData(TypeData.FORM);
 
-        List<Parameters> paramList = new ArrayList<>();
-
-        org.w3c.dom.Document doc = getDocument(entity.getAssociatedXml());
-        Element root = (Element) doc.getDocumentElement();
-
-        // Attributs uniques
-        String id  = root.getElementsByTagName(VPIConstants.XML_TAG_ID) .item(0).getTextContent();
-        String uid = root.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
-        entity.addUniqueAttributes(VPIConstants.XML_TAG_ID,  id);
-        entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
-
-        com.stilog.prism.comparevpi.model.GeneralCorrespondance gCorr =
-            com.stilog.prism.comparevpi.model.GeneralCorrespondance.getInstance();
-        gCorr.addCorrespondance(VPIConstants.XML_TAG_ID,  id,  entity.getName());
-        gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, uid, entity.getName());
-        gCorr.addCorrespondance(VPIConstants.PARAMETER_FORM_MODEL, id, entity.getName());
-
-        // Attributs cachés
-        String comments = root.getElementsByTagName(VPIConstants.XML_TAG_COMMENTS).item(0).getTextContent();
-        entity.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS, comments);
-
-        // Headings
-        Node headingsNode = root.getElementsByTagName(VPIConstants.XML_TAG_HEADINGS).item(0);
-        if (headingsNode != null) {
-            paramList.addAll(computeHeadings(headingsNode));
+        com.visualplanning.vpi.model.form.FormModel form = findForm(entity.getId());
+        if (form == null) {
+            System.out.println("Formulaire introuvable pour l'entité id=" + entity.getId());
+            return new ArrayList<>();
         }
 
-        return paramList;
+        entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(form.getId()));
+        entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, form.getUid());
+
+        GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
+        gCorr.addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(form.getId()), entity.getName());
+        gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, form.getUid(), entity.getName());
+        gCorr.addCorrespondance(VPIConstants.PARAMETER_FORM_MODEL, String.valueOf(form.getId()), entity.getName());
+
+        entity.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS, form.getDescription().getDisplayValue());
+
+        return computeHeadings(entity, form);
     }
 
-    /**
-     * Parse les {@code <com.visualplanning.data.Heading>} du formulaire.
-     * Même logique que {@code ResourceModel.computeHeadings()}, adaptée aux
-     * types spécifiques des formulaires.
-     */
-    private List<Parameters> computeHeadings(Node parentNode) {
+    private com.visualplanning.vpi.model.form.FormModel findForm(int id) {
+        for (com.visualplanning.vpi.model.form.FormModel f : this.planning.getForms()) {
+            if (f.getId() == id)
+                return f;
+        }
+        return null;
+    }
+
+    /** Même logique que {@code ResourceModel.computeHeadings()}, adaptée aux formulaires. */
+    private List<Parameters> computeHeadings(Entity entity, com.visualplanning.vpi.model.form.FormModel form) {
         List<Parameters> headings = new ArrayList<>();
-        NodeList headingsList = parentNode.getChildNodes();
+        Map<String, String> rawFragments = RawFragmentIndexer.fragmentsById(
+                entity.getAssociatedXml(), VPIConstants.XML_TAG_HEADINGS, VPIConstants.XML_TAG_ID);
 
-        for (int i = 0; i < headingsList.getLength(); i++) {
-            Node heading = headingsList.item(i);
-            if (heading.getNodeType() != Node.ELEMENT_NODE) continue;
+        for (Heading heading : form.getHeadings()) {
+            Parameters param = new Parameters(heading.getName());
+            param.setParentTag(VPIConstants.XML_TAG_HEADINGS);
+            param.setUid(heading.getUid());
 
-            Element h = (Element) heading;
-
-            String id   = h.getElementsByTagName(VPIConstants.XML_TAG_ID) .item(0).getTextContent();
-            String uid  = h.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
-            String name = h.getElementsByTagName(VPIConstants.XML_TAG_NAME).item(0).getTextContent();
-
-            Element typeEl = (Element) h.getElementsByTagName(VPIConstants.XML_TAG_TYPE).item(0);
-            String typeClass = typeEl != null ? typeEl.getAttribute("class") : "";
-
-            // Libellé lisible du type
-            String typeLabel = resolveTypeLabel(typeClass);
-
-            Parameters param = new Parameters(name);
-            param.setParentTag(parentNode.getNodeName());
-            param.setUid(uid);
-            param.setInitialXml(MethodUtil.nodeToString(heading));
-            param.setAssociatedXml(MethodUtil.nodeToString(heading));
-
-            // Champs calculés → lecture seule
-            boolean isComputed = COMPUTED_TYPES.contains(typeClass)
-                || typeClass.contains("FileType");
+            boolean isComputed = PropertyLabels.isComputed(heading.getHeadingType());
             param.setMergeable(!isComputed);
             param.setReplaceable(!isComputed);
 
-            param.addUniqueAttributes(VPIConstants.XML_TAG_ID,  id);
-            param.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+            param.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()));
+            param.addUniqueAttributes(VPIConstants.XML_TAG_UID, heading.getUid());
 
-            com.stilog.prism.comparevpi.model.GeneralCorrespondance gCorr =
-                com.stilog.prism.comparevpi.model.GeneralCorrespondance.getInstance();
-            gCorr.addCorrespondance(VPIConstants.XML_TAG_ID,  id,  name);
-            gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, uid, name);
+            GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
+            gCorr.addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()), heading.getName());
+            gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, heading.getUid(), heading.getName());
 
-            // Attributs visibles
-            param.addAttributes(VPIConstants.PARAMETER_NAME, name);
-            param.addAttributes(VPIConstants.PARAMETER_TYPE, typeLabel);
-
-            // Liste à choix unique
-            NodeList uniqueValues = h.getElementsByTagName(VPIConstants.XML_TAG_UNIQUE_VALUE_LIST);
-            if (uniqueValues != null && uniqueValues.getLength() > 0) {
-                param.addAttributes(VPIConstants.PARAMETER_VALUE_LIST,
-                    extractValueList(uniqueValues.item(0)));
+            String rawFragment = rawFragments.get(String.valueOf(heading.getId()));
+            if (rawFragment != null) {
+                param.setInitialXml(rawFragment);
+                param.setAssociatedXml(rawFragment);
             }
 
-            // Liste à choix multiple
-            NodeList multiValues = h.getElementsByTagName(VPIConstants.XML_TAG_MULTI_VALUE_LIST);
-            if (multiValues != null && multiValues.getLength() > 0) {
-                param.addAttributes(VPIConstants.PARAMETER_VALUE_LIST,
-                    extractValueList(multiValues.item(0)));
+            param.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
+            param.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));
+
+            Set<Property> alreadyShown = new HashSet<>();
+            if (heading instanceof HeadingResourceReference ref) {
+                alreadyShown.add(ref.getReferencedDimension());
+                if (ref.getReferencedDimension().getEntityId() != -1)
+                    param.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, ref.getReferencedDimension().getDisplayValue());
+            }
+            if (heading instanceof HeadingUniqueChoice choice) {
+                alreadyShown.add(choice.getChoices());
+                param.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
+            }
+            if (heading instanceof HeadingMultiChoice choice) {
+                alreadyShown.add(choice.getChoices());
+                param.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
             }
 
-            // Attributs cachés
-            String comments    = h.getElementsByTagName(VPIConstants.XML_TAG_COMMENTS).item(0).getTextContent();
-            Node   defaultNode = h.getElementsByTagName(VPIConstants.XML_TAG_DEFAULT_VAL).item(0);
-            String defaultVal  = defaultNode != null ? defaultNode.getTextContent() : "";
-            Node   lengthNode  = typeEl != null ? typeEl.getElementsByTagName(VPIConstants.XML_TAG_LENGHT).item(0) : null;
-            String length      = lengthNode != null ? lengthNode.getTextContent() : "";
-            Node   patternNode = h.getElementsByTagName(VPIConstants.XML_TAG_PATTERN).item(0);
-            String pattern     = patternNode != null ? patternNode.getTextContent() : "";
-
-            param.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS,     comments);
-            param.addHiddenAttributes(VPIConstants.PARAMETER_DEFAULT_VAL,  defaultVal);
-            param.addHiddenAttributes(VPIConstants.PARAMETER_LENGHT,       length);
-            param.addHiddenAttributes(VPIConstants.PARAMETER_PATTERN,      pattern);
+            for (Property p : heading.getProperties()) {
+                if (alreadyShown.contains(p))
+                    continue;
+                param.addHiddenAttributes(p.getLabel(), p.getDisplayValue());
+            }
 
             headings.add(param);
         }
         return headings;
-    }
-
-    /** Convertit la classe technique VP en libellé lisible. */
-    private static String resolveTypeLabel(String typeClass) {
-        if (typeClass == null || typeClass.isBlank()) return "?";
-        // Enlever le package si présent
-        int dot = typeClass.lastIndexOf('.');
-        String simple = dot >= 0 ? typeClass.substring(dot + 1) : typeClass;
-        return switch (simple) {
-            case "StringType"             -> "Texte";
-            case "MultiLineType"          -> "Texte multiligne";
-            case "DoubleType"             -> "Nombre";
-            case "IntegerType"            -> "Entier";
-            case "BooleanType"            -> "Booléen";
-            case "DateTimeType"           -> "Date/Heure";
-            case "UniqueChoiceType"       -> "Liste (unique)";
-            case "MultipleChoiceType"     -> "Liste (multiple)";
-            case "ResourceReference"      -> "Référence dimension";
-            case "StringHeadingOperation" -> "Calculé (texte)";
-            case "HeadingOperation"       -> "Calculé (nombre)";
-            case "ControlColumn"          -> "Calculé (contrôle)";
-            case "StringControlColumn"    -> "Calculé (ctrl texte)";
-            case "FileType"               -> "Fichier/Image";
-            default                       -> simple;
-        };
-    }
-
-    /** Extrait la liste de valeurs d'un nœud valueList. */
-    private static String extractValueList(Node listNode) {
-        StringBuilder sb = new StringBuilder();
-        NodeList items = listNode.getChildNodes();
-        for (int j = 0; j < items.getLength(); j++) {
-            if (items.item(j).getNodeType() != Node.ELEMENT_NODE) continue;
-            Element item = (Element) items.item(j);
-            NodeList vals = item.getElementsByTagName(VPIConstants.XML_TAG_VALUE);
-            if (vals.getLength() > 0) {
-                if (!sb.isEmpty()) sb.append(", ");
-                sb.append(vals.item(0).getTextContent());
-            }
-        }
-        return sb.toString();
     }
 }

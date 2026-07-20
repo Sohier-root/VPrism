@@ -1,27 +1,28 @@
 package com.stilog.prism.vpimodel.vpsettings;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import java.util.Set;
 
 import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
-import com.stilog.prism.comparevpi.utils.MethodUtil;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeData;
+import com.stilog.prism.vpimodel.reader.PropertyLabels;
+import com.stilog.prism.vpimodel.reader.RawFragmentIndexer;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.visualplanning.vpi.model.dimension.Dimension;
+import com.visualplanning.vpi.model.dimension.Heading;
+import com.visualplanning.vpi.model.dimension.heading.HeadingMultiChoice;
+import com.visualplanning.vpi.model.dimension.heading.HeadingResourceReference;
+import com.visualplanning.vpi.model.dimension.heading.HeadingUniqueChoice;
+import com.visualplanning.vpi.model.property.Property;
+import com.visualplanning.vpi.model.property.PropertyList;
 
 public class ResourceModel extends FileDatas{
 
-	private Map<String, String> attributesCorr = new HashMap<>();
-	private GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
-	
 	public ResourceModel(String filePath, String name) {
 		super(filePath, name);
 	}
@@ -63,277 +64,155 @@ public class ResourceModel extends FileDatas{
 	}
 
 	/*
-	 * PARSE XML
+	 * PARSE (via VPIReader)
 	 */
 	@Override
 	protected List<Parameters> parseXml(Entity entity) {
-		//Les Dimensions sont ajoutable et remplacable
 		entity.setMergeable(true);
 		entity.setReplaceable(true);
-		
-		List<Parameters> paramList = new ArrayList<>();
-		Document doc = getDocument(entity.getAssociatedXml());
-		
-		Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
-		
-		/*
-		 * Ajout des attribut unique (id, uid ...)
-		 */
-		String id = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
-		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
 		entity.setTypeData(TypeData.DIMENSION);
-		
-		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, id, entity.getName());
-		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, uid, entity.getName());
-		// Enregistrement sous la clé "Dimension" pour les recherches depuis Hierarchies et ImportExport
-		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, id, entity.getName());
+
+		Dimension dim = findDimension(entity.getId());
+		if (dim == null) {
+			System.out.println("Dimension introuvable pour l'entité id=" + entity.getId());
+			return new ArrayList<>();
+		}
+
+		List<Parameters> paramList = new ArrayList<>();
+
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(dim.getId()));
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, dim.getUid());
+
+		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(dim.getId()), entity.getName());
+		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, dim.getUid(), entity.getName());
+		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, String.valueOf(dim.getId()), entity.getName());
+
 		/*
-		 * Ajout attribut caché
+		 * Attributs cachés
 		 */
-		String comments = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_COMMENTS).item(0).getTextContent();
-		String activateEvntCom = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ACTIVATE_EVT_COM).item(0).getTextContent();
-		String activateCom = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ACTIVATE_COM).item(0).getTextContent();
-		String activateEvntHist = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ACTIVATE_COM).item(0).getTextContent();
-		String activateHist = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ACTIVATE_COM).item(0).getTextContent();
-		String autoFilter = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_AUTO_FILTER).item(0).getTextContent();
-		String buffered = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_BUFFERED).item(0).getTextContent();
-		String creaEvt = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_CREATE_EVT).item(0).getTextContent();
-		
-		Element treeStructNode = (Element) firstNodes.getElementsByTagName(VPIConstants.XML_TAG_TREESTRUCT).item(0);
-		String treeStructId = treeStructNode.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
-		String treeStructName = treeStructId.equals("-1") ? "" : GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.XML_TAG_TREESTRUCT, treeStructId);
-		
-		String separator = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_SEPARATOR).item(0).getTextContent();
-		
-		Element dailyCalendarNode = (Element) firstNodes.getElementsByTagName(VPIConstants.XML_TAG_CALENDAR).item(0);
-		String calendarId = dailyCalendarNode.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
-		String calendarName = calendarId.equals("-1") ? "" : GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.XML_TAG_CALENDAR, calendarId);
-		
-		Element creaRuleNode = (Element) firstNodes.getElementsByTagName(VPIConstants.XML_TAG_CREATION_RULE).item(0);
-		String creaRuleId = creaRuleNode.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
-		String creaRuleName = creaRuleId.equals("-1") ? "" : GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.XML_TAG_CREATION_RULE, creaRuleId);
-		
-		Element colorNode = (Element) firstNodes.getElementsByTagName(VPIConstants.XML_TAG_COLOR).item(0);
-		String colorArgb = colorNode.getElementsByTagName(VPIConstants.XML_TAG_ARGB).item(0).getTextContent();
-		
-		
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS, comments);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_EVT_COM, activateEvntCom);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_COM, activateCom);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_EVT_HIST, activateEvntHist);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_HIST, activateHist);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_AUTO_FILTER, autoFilter);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_BUFFERED, buffered);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_CREATE_EVT, creaEvt);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_TREESTRUCT, treeStructName);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_SEPARATOR, separator);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_CALENDAR, calendarName);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_CREATION_RULE, creaRuleName);
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_COLOR, colorArgb);
-		
-		
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS, dim.getDescription().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_EVT_COM, dim.getActivateEventForum().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_COM, dim.getActivateForum().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_EVT_HIST, dim.getActivatedEventHistoryTracker().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_ACTIVATE_HIST, dim.getActivatedHistoryTracker().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_AUTO_FILTER, dim.getAutoFilter().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_BUFFERED, dim.getBuffered().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_CREATE_EVT, dim.getCreateEvent().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_TREESTRUCT, dim.getEventHierarchy().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_SEPARATOR, dim.getSeparator().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_CALENDAR, dim.getDailyCalendar().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_CREATION_RULE, dim.getEventCreationRule().getDisplayValue());
+		entity.addHiddenAttributes(VPIConstants.PARAMETER_COLOR, dim.getColorArgb().getDisplayValue());
+
 		/*
-		 * Récupération des attributs de la dimension
+		 * Rubriques (headings)
 		 */
-		paramList.addAll(computeHeadings(firstNodes.getElementsByTagName(VPIConstants.XML_TAG_HEADINGS).item(0), entity));
-		paramList.addAll(computeImportantHeadings(firstNodes, entity));
-		
+		paramList.addAll(computeHeadings(entity, dim));
+		paramList.addAll(computeImportantHeadings(entity, dim));
+
 		return paramList;
 	}
-	
-	/**
-	 * Recupère les attributs de la dimension
-	 * @param parentNode
-	 * @return
-	 */
-	private List<Parameters> computeHeadings(Node parentNode, Entity entity){
-		List<Parameters> headings = new ArrayList<>();
-		
-		NodeList headingsList = parentNode.getChildNodes();
-		
-		for(int i = 0; i < headingsList.getLength(); i++) {
-			Node heading = headingsList.item(i);
-			if (heading.getNodeType() != Node.ELEMENT_NODE)
-	            continue;
 
-			Element attributesList = (Element) heading.getChildNodes();
-			
-			String id = attributesList.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
-			String uid = attributesList.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
-			String name = attributesList.getElementsByTagName(VPIConstants.XML_TAG_NAME).item(0).getTextContent();
-			Element typeElement = ((Element)attributesList.getElementsByTagName(VPIConstants.XML_TAG_TYPE).item(0));
-			String type = typeElement.getAttribute("class");
-			
-			Parameters newParam = new Parameters(name);
+	private Dimension findDimension(int id) {
+		for (Dimension d : this.planning.getDimensions()) {
+			if (d.getId() == id)
+				return d;
+		}
+		return null;
+	}
+
+	private List<Parameters> computeHeadings(Entity entity, Dimension dim) {
+		List<Parameters> headings = new ArrayList<>();
+		Map<String, String> rawFragments = RawFragmentIndexer.fragmentsById(
+				entity.getAssociatedXml(), VPIConstants.XML_TAG_HEADINGS, VPIConstants.XML_TAG_ID);
+
+		for (Heading heading : dim.getHeadings()) {
+			Parameters newParam = new Parameters(heading.getName());
 			newParam.setMergeable(true);
 			newParam.setReplaceable(true);
-			newParam.setParentTag(parentNode.getNodeName());
-			newParam.setUid(uid);
-			newParam.addAttributes(VPIConstants.PARAMETER_NAME, name);
-			newParam.addAttributes(VPIConstants.PARAMETER_TYPE, type);
-			
-			newParam.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
-			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, id, name);
-			newParam.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
-			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, uid, name);
-			
-			newParam.setInitialXml(MethodUtil.nodeToString(heading));
-			newParam.setAssociatedXml(MethodUtil.nodeToString(heading));
-			
-			//Si c'est un type resourceReference
-			NodeList resourceModel = attributesList.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODEL);
-			if(resourceModel != null && resourceModel.getLength() > 0) {
-				Element resourceModelParam = (Element) resourceModel.item(0).getChildNodes();
-				String idResourceModel = resourceModelParam.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
-				String resourceModelName = gCorr.getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, idResourceModel);
-				entity.addResourceModelAttributes(idResourceModel); //Ajout de l'id de la dimension pour correspondances
-				newParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, resourceModelName!=null?resourceModelName:idResourceModel);
-				
+			newParam.setParentTag(VPIConstants.XML_TAG_HEADINGS);
+			newParam.setUid(heading.getUid());
+			newParam.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
+			newParam.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));
+
+			newParam.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()));
+			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()), heading.getName());
+			newParam.addUniqueAttributes(VPIConstants.XML_TAG_UID, heading.getUid());
+			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, heading.getUid(), heading.getName());
+
+			String rawFragment = rawFragments.get(String.valueOf(heading.getId()));
+			if (rawFragment != null) {
+				newParam.setInitialXml(rawFragment);
+				newParam.setAssociatedXml(rawFragment);
 			}
-			
-			//Liste à choix unique
-			NodeList uniqueValues = attributesList.getElementsByTagName(VPIConstants.XML_TAG_UNIQUE_VALUE_LIST);
-			if(uniqueValues != null && uniqueValues.getLength() > 0) {
-				NodeList uniqueValueList = uniqueValues.item(0).getChildNodes();
-				String uniqueListStr = "";
-				for(int j = 0; j<uniqueValueList.getLength(); j++) {
-					if (uniqueValueList.item(j).getNodeType() != Node.ELEMENT_NODE)
-			            continue;
-					Element itemList = (Element) uniqueValueList.item(j);
-					String itemName = itemList.getElementsByTagName(VPIConstants.XML_TAG_VALUE).item(0).getTextContent();
-					uniqueListStr += ", " + itemName;
+
+			// Propriétés déjà rendues sous forme d'attribut visible : à exclure des attributs cachés.
+			Set<Property> alreadyShown = new HashSet<>();
+
+			if (heading instanceof HeadingResourceReference ref) {
+				alreadyShown.add(ref.getReferencedDimension());
+				if (ref.getReferencedDimension().getEntityId() != -1) {
+					entity.addResourceModelAttributes(String.valueOf(ref.getReferencedDimension().getEntityId()));
+					newParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, ref.getReferencedDimension().getDisplayValue());
 				}
-				newParam.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, uniqueListStr.replaceFirst(", ", ""));
 			}
-			
-			//Liste à choix multiple
-			NodeList multipleValues = attributesList.getElementsByTagName(VPIConstants.XML_TAG_MULTI_VALUE_LIST);
-			if(multipleValues != null && multipleValues.getLength() > 0) {
-				NodeList multipleValuesList = multipleValues.item(0).getChildNodes();
-				String uniqueListStr = "";
-				for(int j = 0; j<multipleValuesList.getLength(); j++) {
-					if (multipleValuesList.item(j).getNodeType() != Node.ELEMENT_NODE)
-			            continue;
-					Element itemList = (Element) multipleValuesList.item(j);
-					String itemName = itemList.getElementsByTagName(VPIConstants.XML_TAG_VALUE).item(0).getTextContent();
-					uniqueListStr += ", " + itemName;
-				}
-				newParam.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, uniqueListStr.replaceFirst(", ", ""));
+			if (heading instanceof HeadingUniqueChoice choice) {
+				alreadyShown.add(choice.getChoices());
+				newParam.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
 			}
-			
-			/*
-			 * Attribut caché
-			 */
-			String comments = attributesList.getElementsByTagName(VPIConstants.XML_TAG_COMMENTS).item(0).getTextContent();
-			String indexed = attributesList.getElementsByTagName(VPIConstants.XML_TAG_INDEXED).item(0).getTextContent();
-			String defaultVal = attributesList.getElementsByTagName(VPIConstants.XML_TAG_DEFAULT_VAL).item(0).getTextContent();
-			String forbiddenDefVal = attributesList.getElementsByTagName(VPIConstants.XML_TAG_FORBIDDEN_DEFAULT_VAL).item(0).getTextContent();
-			Node lenghtNode = typeElement.getElementsByTagName(VPIConstants.XML_TAG_LENGHT).item(0);
-			String lenght = lenghtNode!=null ? lenghtNode.getTextContent() : "";
-			Node patternNode = attributesList.getElementsByTagName(VPIConstants.XML_TAG_PATTERN).item(0);
-			String pattern = patternNode!=null ? patternNode.getTextContent() : "";
-			
-			newParam.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS, comments);
-			newParam.addHiddenAttributes(VPIConstants.PARAMETER_INDEXED, indexed);
-			newParam.addHiddenAttributes(VPIConstants.PARAMETER_DEFAULT_VAL, defaultVal);
-			newParam.addHiddenAttributes(VPIConstants.PARAMETER_FORBIDDEN_DEFAULT_VAL, forbiddenDefVal);
-			newParam.addHiddenAttributes(VPIConstants.PARAMETER_LENGHT, lenght);
-			newParam.addHiddenAttributes(VPIConstants.PARAMETER_PATTERN, pattern);
-			
+			if (heading instanceof HeadingMultiChoice choice) {
+				alreadyShown.add(choice.getChoices());
+				newParam.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
+			}
+
+			for (Property p : heading.getProperties()) {
+				if (alreadyShown.contains(p))
+					continue;
+				newParam.addHiddenAttributes(p.getLabel(), p.getDisplayValue());
+			}
+
 			headings.add(newParam);
-			
-			attributesCorr.put(id, name);
-			
 		}
 		return headings;
 	}
-	
-	private List<Parameters> computeImportantHeadings(Element parentNode, Entity entity){
+
+	private List<Parameters> computeImportantHeadings(Entity entity, Dimension dim) {
 		List<Parameters> importantHeadings = new ArrayList<>();
-		
-		Node keyNode = parentNode.getElementsByTagName(VPIConstants.XML_TAG_KEY).item(0);
-		Node keyHeadingsNode = parentNode.getElementsByTagName(VPIConstants.XML_TAG_KEYHEADINGS).item(0);
-		Node labelsHeadingsNode = parentNode.getElementsByTagName(VPIConstants.XML_TAG_LABELSHEADINGS).item(0);
-		Node mandatoryNode = parentNode.getElementsByTagName(VPIConstants.XML_TAG_MANDATORY).item(0);
-		
-		NodeList keyList = ((Element) keyNode.getChildNodes()).getElementsByTagName(VPIConstants.XML_TAG_ENTITYID);
-		NodeList keyHeadingsList = ((Element) keyHeadingsNode.getChildNodes()).getElementsByTagName(VPIConstants.XML_TAG_ENTITYID);
-		NodeList labelsHeadingsList = ((Element) labelsHeadingsNode.getChildNodes()).getElementsByTagName(VPIConstants.XML_TAG_ENTITYID);
-		NodeList mandatoryList = ((Element) mandatoryNode.getChildNodes()).getElementsByTagName(VPIConstants.XML_TAG_ENTITYID);
-		
-		//KEY
-		Parameters keyParam = new Parameters(VPIConstants.PARAMETER_KEY, MethodUtil.nodeToString(keyNode));
-		keyParam.setReplaceable(true);
-		keyParam.setEditableName(false);
-		keyParam.setDocumentable(false);
-		String keysStr = "";
-		for(int i = 0; i<keyList.getLength(); i++) {
-			Node key = keyList.item(i);
-			String idAttribute =  key.getTextContent();
-			String nameAttribute = attributesCorr.containsKey(idAttribute)?attributesCorr.get(idAttribute):idAttribute;
-			keyParam.addAttributes(VPIConstants.PARAMETER_KEY + String.valueOf(i), 
-					nameAttribute);
-			keysStr += ", " + nameAttribute;
-		}
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_KEY, keysStr.replaceFirst(", ", ""));
-		
-		//KEY HEADINGS
-		Parameters keyHeadingsParam = new Parameters(VPIConstants.PARAMETER_KEYHEADINGS, MethodUtil.nodeToString(keyHeadingsNode));
-		keyHeadingsParam.setReplaceable(true);
-		keyHeadingsParam.setEditableName(false);
-		keyHeadingsParam.setDocumentable(false);
-		String keysHeadingStr = "";
-		for(int i = 0; i<keyHeadingsList.getLength(); i++) {
-			Node key = keyHeadingsList.item(i);
-			String idAttribute =  key.getTextContent();
-			String nameAttribute = attributesCorr.containsKey(idAttribute)?attributesCorr.get(idAttribute):idAttribute;
-			keyHeadingsParam.addAttributes(VPIConstants.PARAMETER_KEYHEADINGS + String.valueOf(i), 
-					nameAttribute);
-			keysHeadingStr += ", " + nameAttribute;
-		}
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_KEYHEADINGS, keysHeadingStr.replaceFirst(", ", ""));
-		
-		//LABEL HEADINGS
-		Parameters labelsHeadingsParam = new Parameters(VPIConstants.PARAMETER_LABELSHEADINGS, MethodUtil.nodeToString(labelsHeadingsNode));
-		labelsHeadingsParam.setReplaceable(true);
-		labelsHeadingsParam.setEditableName(false);
-		labelsHeadingsParam.setDocumentable(false);
-		String labelsHeadingStr = "";
-		for(int i = 0; i<labelsHeadingsList.getLength(); i++) {
-			Node key = labelsHeadingsList.item(i);
-			String idAttribute = key.getTextContent();
-			String nameAttribute = attributesCorr.containsKey(idAttribute)?attributesCorr.get(idAttribute):idAttribute;
-			labelsHeadingsParam.addAttributes(VPIConstants.PARAMETER_LABELSHEADINGS + String.valueOf(i), 
-					nameAttribute);
-			labelsHeadingStr += ", " + nameAttribute;
-		}
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_LABELSHEADINGS, labelsHeadingStr.replaceFirst(", ", ""));
-		
-		//MANDATORY
-		Parameters mandatoryParam = new Parameters(VPIConstants.PARAMETER_MANDATORY, MethodUtil.nodeToString(mandatoryNode));
-		mandatoryParam.setReplaceable(true);
-		mandatoryParam.setEditableName(false);
-		mandatoryParam.setDocumentable(false);
-		String mandatoryStr = "";
-		for(int i = 0; i<mandatoryList.getLength(); i++) {
-			Node key = mandatoryList.item(i);
-			String idAttribute =  key.getTextContent();
-			String nameAttribute = attributesCorr.containsKey(idAttribute)?attributesCorr.get(idAttribute):idAttribute;
-			mandatoryParam.addAttributes(VPIConstants.PARAMETER_MANDATORY + String.valueOf(i), 
-					nameAttribute);
-			mandatoryStr += ", " + nameAttribute;
-		}
-		entity.addHiddenAttributes(VPIConstants.PARAMETER_MANDATORY, mandatoryStr.replaceFirst(", ", ""));
-		
-		importantHeadings.add(keyParam);
-		importantHeadings.add(keyHeadingsParam);
-		importantHeadings.add(labelsHeadingsParam);
-		importantHeadings.add(mandatoryParam);
-		
+
+		importantHeadings.add(headingRefParameters(entity, VPIConstants.PARAMETER_KEY, dim.getKeyHeadingIds(), dim, true));
+		importantHeadings.add(headingRefParameters(entity, VPIConstants.PARAMETER_KEYHEADINGS, dim.getKeyHeadingIds(), dim, false));
+		importantHeadings.add(headingRefParameters(entity, VPIConstants.PARAMETER_LABELSHEADINGS, dim.getLabelsHeadingIds(), dim, false));
+		importantHeadings.add(headingRefParameters(entity, VPIConstants.PARAMETER_MANDATORY, dim.getMandatoryHeadingIds(), dim, false));
+
 		return importantHeadings;
 	}
 
-	
+	private Parameters headingRefParameters(Entity entity, String parameterName, PropertyList<Integer> ids, Dimension dim, boolean alsoHidden) {
+		Parameters param = new Parameters(parameterName);
+		param.setReplaceable(true);
+		param.setEditableName(false);
+		param.setDocumentable(false);
+
+		List<Integer> idList = ids != null ? ids.getValue() : List.of();
+		List<String> names = new ArrayList<>();
+		for (int i = 0; i < idList.size(); i++) {
+			String headingName = headingNameById(dim, idList.get(i));
+			param.addAttributes(parameterName + i, headingName);
+			names.add(headingName);
+		}
+		String joined = String.join(", ", names);
+		entity.addHiddenAttributes(parameterName, joined);
+		if (alsoHidden)
+			entity.addHiddenAttributes(VPIConstants.PARAMETER_KEY, joined);
+
+		return param;
+	}
+
+	private String headingNameById(Dimension dim, int id) {
+		for (Heading h : dim.getHeadings()) {
+			if (h.getId() == id)
+				return h.getName();
+		}
+		return String.valueOf(id);
+	}
 }

@@ -2,16 +2,14 @@ package com.stilog.prism.vpimodel.vpsettings;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import java.util.Optional;
 
 import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
-import com.stilog.prism.comparevpi.utils.MethodUtil;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
+import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.visualplanning.vpi.model.filter.VpiFilter;
 
 public class Filter extends FileDatas{
 
@@ -30,49 +28,48 @@ public class Filter extends FileDatas{
 		this.filterCorrespondanceKey = key;
 	}
 
+	private boolean isEventFilter() {
+		return VPIConstants.XML_TAG_FILTER_EVENT.equals(filterCorrespondanceKey);
+	}
+
 	/*
-	 * PARSE XML
+	 * PARSE (via VPIReader)
 	 */
 	@Override
 	protected List<Parameters> parseXml(Entity entity) {
-		
+
 		List<Parameters> paramList = new ArrayList<>();
-		try {
-			Document doc = getDocument(entity.getAssociatedXml());
-			Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
-			
-			/*
-			 * Ajout des attribut unique (id, uid ...)
-			 */
-			String id = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
-			String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
-			entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
-			entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
-			entity.setReplaceable(true);
-			entity.setMergeable(true);
-			
-			/*
-			 * Enregistrement dans GeneralCorrespondance pour résolution INFILTER
-			 * Clé : filterCorrespondanceKey (ressource ou événement), valeur : id → nom
-			 */
-			GeneralCorrespondance.getInstance().addCorrespondance(
-				filterCorrespondanceKey, id, entity.getName());
-			
-			/*
-			 * Recupération des conditions du filtre
-			 */
-			String name = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_NAME).item(0).getTextContent();
-			Node conditonsNode = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_FILTERCONDITION).item(0);
-			Parameters newParam = new Parameters(name);
-			newParam.setReplaceable(true);
-			newParam.addAttributes(VPIConstants.PARAMETER_CONDITIONS, MethodUtil.nodeToString(conditonsNode));
-			
-			paramList.add(newParam);
+
+		Optional<VpiFilter> found = isEventFilter()
+				? this.planning.getFilterSet().eventFilterById(entity.getId())
+				: this.planning.getFilterSet().resourceFilterById(entity.getId());
+
+		if (found.isEmpty()) {
+			System.out.println("Filtre introuvable pour l'entité id=" + entity.getId());
+			return paramList;
 		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
-		
+		VpiFilter filter = found.get();
+
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(filter.getId()));
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, filter.getUid());
+		entity.setReplaceable(true);
+		entity.setMergeable(true);
+
+		/*
+		 * Enregistrement dans GeneralCorrespondance pour résolution INFILTER
+		 * Clé : filterCorrespondanceKey (ressource ou événement), valeur : id → nom
+		 */
+		GeneralCorrespondance.getInstance().addCorrespondance(
+			filterCorrespondanceKey, String.valueOf(filter.getId()), entity.getName());
+
+		Parameters newParam = new Parameters(filter.getName().getDisplayValue());
+		newParam.setReplaceable(true);
+		newParam.addAttributes(VPIConstants.PARAMETER_CONDITIONS, FilterConditionFormatter.format(filter.getRootCondition()));
+		newParam.addHiddenAttributes(VPIConstants.PARAMETER_REF_DIMENSIONS,
+				String.join(", ", FilterConditionFormatter.referencedDimensionNames(filter.getRootCondition(), this.planning)));
+
+		paramList.add(newParam);
+
 		return paramList;
 	}
 

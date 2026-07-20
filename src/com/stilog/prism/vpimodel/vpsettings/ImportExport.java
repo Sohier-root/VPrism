@@ -1,219 +1,199 @@
 package com.stilog.prism.vpimodel.vpsettings;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.visualplanning.vpi.model.dimension.Dimension;
+import com.visualplanning.vpi.model.importexport.CsvFileConfig;
+import com.visualplanning.vpi.model.importexport.Definition;
+import com.visualplanning.vpi.model.importexport.ExportEventResourceContext;
+import com.visualplanning.vpi.model.importexport.ImportExportContextBase;
+import com.visualplanning.vpi.model.importexport.ImportExportProperty;
+import com.visualplanning.vpi.model.importexport.ImportEventResourceContext;
+import com.visualplanning.vpi.model.property.PropertyText;
 
 public class ImportExport extends FileDatas{
 	boolean isImport = false;
-	
+
+	/** Liste (parmi les 4 de {@code ImportExportSet}) correspondant à ce fichier, fournie par VPIDatas. */
+	private List<? extends ImportExportContextBase> contexts;
+
 	public ImportExport(String filePath, String name) {
 		super(filePath, name);
 	}
-	
+
+	public void setContexts(List<? extends ImportExportContextBase> contexts) {
+		this.contexts = contexts;
+	}
+
 	/*
-	 * PARSE XML
+	 * PARSE (via VPIReader, sauf Cle/Cle parent : non couvert par VPIReader,
+	 * conservé en lecture DOM directe sur le fragment XML de l'entité)
 	 */
 	@Override
 	protected List<Parameters> parseXml(Entity entity) {
-		
-		List<Parameters> paramList = new ArrayList<>();
-		Document doc = getDocument(entity.getAssociatedXml());
-		
-		Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
 
-		/*
-		 * Ajout des attribut unique (id, uid ...)
-		 */
-		String id = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
-		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
+		List<Parameters> paramList = new ArrayList<>();
+		ImportExportContextBase context = findContext(entity.getId());
+		if (context == null) {
+			System.out.println("Contexte import/export introuvable pour l'entité id=" + entity.getId());
+			return paramList;
+		}
+
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(context.getId()));
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, context.getUid());
 		entity.setMergeable(true);
 		entity.setReplaceable(true);
-		
-		/*
-		 * Recupération de la configuration
-		 */
-		Element configuration = (Element) firstNodes.getElementsByTagName(VPIConstants.XML_TAG_CONFIGURATION).item(0).getChildNodes();
-		
-		Node attributes = configuration.getElementsByTagName(VPIConstants.XML_TAG_EXPORTATTRIBUTES).item(0);
-		if(attributes == null)
-			attributes = configuration.getElementsByTagName(VPIConstants.XML_TAG_EVENTPROPERTIES).item(0);
-		
-		paramList.add(computeCorrespondance(attributes));
-		
-		paramList.addAll(computeConfiguration(configuration));
-		
+
+		Definition def = context.getDefinition();
+
+		paramList.add(computeCorrespondance(def));
+		paramList.addAll(computeConfiguration(entity, context, def));
+
 		return paramList;
 	}
 
-	private Parameters computeCorrespondance(Node parentNode){
-		
-		NodeList attributesList = parentNode.getChildNodes();
+	private ImportExportContextBase findContext(int id) {
+		if (contexts == null)
+			return null;
+		for (ImportExportContextBase c : contexts) {
+			if (c.getId() == id)
+				return c;
+		}
+		return null;
+	}
+
+	private Parameters computeCorrespondance(Definition def) {
 		Parameters param = new Parameters(VPIConstants.PARAMETER_CORRESPONDANCE);
-		
-		for(int i = 0; i < attributesList.getLength(); i++) {
-			Node propertyNode = attributesList.item(i);
-			
-			if (propertyNode.getNodeType() != Node.ELEMENT_NODE)
-	            continue;
-			
-			Element conf = (Element) propertyNode.getChildNodes();
-			Element attribute = (Element) conf.getElementsByTagName(VPIConstants.XML_TAG_ATTRIBUTE).item(0);
-			Element valueNode = (Element) conf.getElementsByTagName(VPIConstants.XML_TAG_VALUE).item(0);
-			
-			String name = attribute.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent();
-			String value = conf.getElementsByTagName(VPIConstants.XML_TAG_VALUE).item(0).getTextContent();
-			
-			if(valueNode.hasAttribute("isNull")) {
-				Element column = (Element) conf.getElementsByTagName(VPIConstants.XML_TAG_COLUMN).item(0);
-				Element sourceAttribute = (Element) conf.getElementsByTagName(VPIConstants.XML_TAG_SOURCEATTRIBUTE).item(0);
-				if(!column.hasAttribute("isNull"))
-					value = column.getElementsByTagName(VPIConstants.XML_TAG_NAME).item(0).getTextContent();
-				else if(!sourceAttribute.hasAttribute("isNull"))
-					value = sourceAttribute.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent();
-			}
+		param.setReplaceable(true);
+		param.setEditableName(false);
 
-			// Lire le resourceModelID de l'attribut pour pouvoir lier l'import/export
-			// à la dimension à laquelle appartient cette rubrique de correspondance
-			org.w3c.dom.NodeList rmIdNodes = attribute.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODELID);
-			if (rmIdNodes != null && rmIdNodes.getLength() > 0) {
-				String rmId = rmIdNodes.item(0).getTextContent().trim();
-				if (!rmId.isBlank() && !"-1".equals(rmId)) {
-					String dimName = GeneralCorrespondance.getInstance()
-						.getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, rmId);
-					if (dimName != null && !dimName.isBlank()) {
-						// Stocker sous la clé "name__DIM" pour que le diagramme puisse l'exploiter
-						param.addHiddenAttributes(name + VPIConstants.CORRESPONDANCE_DIM_SUFFIX, dimName);
-					}
-				}
-			}
+		for (ImportExportProperty prop : def.getCorrespondences()) {
+			param.addAttributes(prop.title(), prop.columnValue());
 
-			param.setReplaceable(true);
-			param.setEditableName(false);
-			param.addAttributes(name, value);
+			if (prop.resourceModelId() != -1) {
+				String dimName = dimensionNameById(prop.resourceModelId());
+				if (dimName != null && !dimName.isBlank())
+					param.addHiddenAttributes(prop.title() + VPIConstants.CORRESPONDANCE_DIM_SUFFIX, dimName);
+			}
 		}
 		return param;
 	}
-	
-	private List<Parameters> computeConfiguration(Node parentNode){
+
+	private List<Parameters> computeConfiguration(Entity entity, ImportExportContextBase context, Definition def) {
 		List<Parameters> paramList = new ArrayList<>();
-		
-		Element attributesList = (Element) parentNode.getChildNodes();
+
 		/*
 		 * SOURCE
 		 */
+		CsvFileConfig src = def.getSourceConfig();
 		Parameters paramSrc = new Parameters(VPIConstants.PARAMETER_SOURCE);
-		Element source = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_SOURCECONFIG).item(0);
-		NodeList paramsSource = source.getChildNodes();
-		for(int i = 0; i<paramsSource.getLength();i++) {
-			Node paramSource = paramsSource.item(i);
-			if (paramSource.getNodeType() != Node.ELEMENT_NODE)
-	            continue;
-			if(this.isExcludedTag(paramSource.getNodeName()))
-				continue;
-			
-			paramSrc.addAttributes(paramSource.getNodeName(), paramSource.getTextContent());
-		}
 		paramSrc.setReplaceable(true);
 		paramSrc.setEditableName(false);
+		paramSrc.addAttributes(VPIConstants.PARAMETER_FORMAT, src.format());
+		paramSrc.addAttributes(VPIConstants.PARAMETER_ENCODING, src.encoding());
+		paramSrc.addAttributes(VPIConstants.PARAMETER_SEPARATOR, src.separator());
 		paramList.add(paramSrc);
-		
+
 		/*
-		 * KEY
+		 * CLE / CLE PARENT — non couvert par VPIReader (Definition n'expose pas
+		 * keyAttributes/parentKeyAttributes) : lu directement dans le fragment XML brut.
 		 */
-		Parameters paramKey = new Parameters(VPIConstants.PARAMETER_KEY);
-		Element keyAttr = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_KEY_ATTRIBUTES).item(0);
-		
-		NodeList keyList = keyAttr.getChildNodes();
-		int keyIndex = 0;
-		for(int i = 0; i<keyList.getLength(); i++) {
-			if (keyList.item(i).getNodeType() != Node.ELEMENT_NODE)
-	            continue;
-			Element key = (Element) keyList.item(i);
-			paramKey.addAttributes(VPIConstants.PARAMETER_KEY + keyIndex, key.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent());
-			keyIndex++;
-		}
-		paramKey.setReplaceable(true);
-		paramKey.setEditableName(false);
-		if(keyIndex != 0)
+		List<String> keyTitles = readKeyTitles(entity.getAssociatedXml(), VPIConstants.XML_TAG_KEY_ATTRIBUTES);
+		if (!keyTitles.isEmpty()) {
+			Parameters paramKey = new Parameters(VPIConstants.PARAMETER_KEY);
+			paramKey.setReplaceable(true);
+			paramKey.setEditableName(false);
+			for (int i = 0; i < keyTitles.size(); i++)
+				paramKey.addAttributes(VPIConstants.PARAMETER_KEY + i, keyTitles.get(i));
 			paramList.add(paramKey);
-		
-		/*
-		 * KEY PARENT
-		 */
-		Parameters paramKeyParent = new Parameters(VPIConstants.PARAMETER_KEY_PARENT);
-		Element keyParentAttr = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_PARENT_KEY_ATTRIBUTES).item(0);
-		
-		if(keyParentAttr != null) {
-			NodeList keyParentList = keyParentAttr.getChildNodes();
-			int keyParentIndex = 0;
-			for(int j = 0; j<keyParentList.getLength(); j++) {
-				if (keyParentList.item(j).getNodeType() != Node.ELEMENT_NODE)
-		            continue;
-				Element key = (Element) keyParentList.item(j);
-				paramKeyParent.addAttributes(VPIConstants.PARAMETER_KEY_PARENT + keyParentIndex, key.getElementsByTagName(VPIConstants.XML_TAG_TITLE).item(0).getTextContent());
-				keyParentIndex++;
-			}
-			
+		}
+
+		List<String> keyParentTitles = readKeyTitles(entity.getAssociatedXml(), VPIConstants.XML_TAG_PARENT_KEY_ATTRIBUTES);
+		if (!keyParentTitles.isEmpty()) {
+			Parameters paramKeyParent = new Parameters(VPIConstants.PARAMETER_KEY_PARENT);
 			paramKeyParent.setReplaceable(true);
 			paramKeyParent.setEditableName(false);
-			if(keyParentIndex != 0)
-				paramList.add(paramKeyParent);
+			for (int i = 0; i < keyParentTitles.size(); i++)
+				paramKeyParent.addAttributes(VPIConstants.PARAMETER_KEY_PARENT + i, keyParentTitles.get(i));
+			paramList.add(paramKeyParent);
 		}
-		
+
 		/*
 		 * PARAMETRE
 		 */
 		Parameters paramParam = new Parameters(VPIConstants.PARAMETER_PARAMETRE);
-		
-		//Mode d'import (Import ressources/evenements)
-		Element importMode = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_IMPORT_MODE).item(0);
-		if(importMode != null)
-			paramParam.addAttributes(VPIConstants.PARAMETER_IMPORT_MODE, importMode.getTextContent());
-		
-		//Modele de ressource associé (Import/Export de ressource)
-		Element resourceModel = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODEL).item(0);
-		if(resourceModel != null) {
-			Element entityId =  (Element) resourceModel.getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0);
-			String resourceModelName = GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, entityId.getTextContent());
-			
-			paramParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, resourceModelName);
-		}
-		
-		//Format de date (Import/Export d'événements)
-		Element dateFormat = (Element) attributesList.getElementsByTagName(VPIConstants.XML_TAG_DATE_FORMAT).item(0);
-		if(dateFormat != null)
-			paramParam.addAttributes(VPIConstants.PARAMETER_DATE_FORMAT, dateFormat.getTextContent());
-		
 		paramParam.setReplaceable(true);
 		paramParam.setEditableName(false);
+
+		PropertyText importMode = def.getImportMode();
+		if (importMode != null)
+			paramParam.addAttributes(VPIConstants.PARAMETER_IMPORT_MODE, importMode.getDisplayValue());
+
+		Integer resourceModelId = resourceModelEntityId(context);
+		if (resourceModelId != null && resourceModelId != -1)
+			paramParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, dimensionNameById(resourceModelId));
+
+		PropertyText dateFormat = def.getDateFormat();
+		if (dateFormat != null)
+			paramParam.addAttributes(VPIConstants.PARAMETER_DATE_FORMAT, dateFormat.getDisplayValue());
+
 		paramList.add(paramParam);
-		
+
 		return paramList;
 	}
 
+	private Integer resourceModelEntityId(ImportExportContextBase context) {
+		if (context instanceof ExportEventResourceContext c)
+			return c.getResourceModelEntityId().getValue();
+		if (context instanceof ImportEventResourceContext c)
+			return c.getResourceModelEntityId().getValue();
+		return null;
+	}
+
+	private String dimensionNameById(int id) {
+		for (Dimension dim : this.planning.getDimensions()) {
+			if (dim.getId() == id)
+				return dim.getName().getDisplayValue();
+		}
+		return null;
+	}
+
+	private List<String> readKeyTitles(String entityXml, String containerTag) {
+		List<String> titles = new ArrayList<>();
+		try {
+			Document doc = getDocument(entityXml);
+			NodeList containers = doc.getElementsByTagName(containerTag);
+			if (containers.getLength() == 0)
+				return titles;
+
+			NodeList children = ((Element) containers.item(0)).getChildNodes();
+			for (int i = 0; i < children.getLength(); i++) {
+				Node child = children.item(i);
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+				Element key = (Element) child;
+				NodeList titleNodes = key.getElementsByTagName(VPIConstants.XML_TAG_TITLE);
+				if (titleNodes.getLength() > 0)
+					titles.add(titleNodes.item(0).getTextContent());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return titles;
+	}
 
 	/*
 	 * METHODS
 	 */
-	/*@Override
-	public String toString() {
-		return "ResourceModel [entities=" + entities + "]";
-	}*/
-
 	public boolean isImport() {
 		return isImport;
 	}
@@ -221,5 +201,5 @@ public class ImportExport extends FileDatas{
 	public void setImport(boolean isImport) {
 		this.isImport = isImport;
 	}
-	
+
 }

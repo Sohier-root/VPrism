@@ -119,6 +119,8 @@ public class VPIConstants {
 	public static final String PARAMETER_COLOR = "Couleur";
 	public static final String PARAMETER_VALUE_LIST = "Liste des valeurs";
 	public static final String PARAMETER_FORM_MODEL = "Formulaire";
+	/** Attribut caché : dimensions référencées par une condition de filtre (pour le diagramme de dépendances). */
+	public static final String PARAMETER_REF_DIMENSIONS = "Dimensions référencées";
 	
 	public static final String NAME_TREE_RESOURCESMODEL = "Resources Model";
 	public static final String NAME_TREE_RESOURCESFILTER = "Resources Filter";

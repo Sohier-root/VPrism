@@ -9,14 +9,6 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import java.io.StringReader;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
 import com.stilog.prism.view.ThemeManager;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
@@ -313,14 +305,7 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
                 } else if (nt == NodeType.HIERARCHY) {
                     for (Parameters param : entity.getParameters()) {
                         linkToDimension(m, nid, param.getName());
-                        String condXml = param.getAttributeValue(VPIConstants.PARAMETER_CONDITIONS);
-                        if (condXml != null && !condXml.isBlank()) {
-                            for (String dimId : extractDimIdsFromConditionXml(condXml)) {
-                                String dimName = GeneralCorrespondance.getInstance()
-                                    .getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, dimId);
-                                if (dimName != null && !dimName.isBlank()) linkToDimension(m, nid, dimName);
-                            }
-                        }
+                        for (String dimName : referencedDimensionNames(param)) linkToDimension(m, nid, dimName);
                     }
                 } else if (nt == NodeType.IMPORT_RESOURCE || nt == NodeType.IMPORT_EVENT
                         || nt == NodeType.EXPORT_RESOURCE || nt == NodeType.EXPORT_EVENT) {
@@ -343,14 +328,7 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
                     }
                 } else if (nt == NodeType.FILTER_RESOURCE || nt == NodeType.FILTER_EVENT) {
                     for (Parameters param : entity.getParameters()) {
-                        String condXml = param.getAttributeValue(VPIConstants.PARAMETER_CONDITIONS);
-                        if (condXml != null && !condXml.isBlank()) {
-                            extractDimIdsFromConditionXml(condXml).forEach(dimId -> {
-                                String dimName = GeneralCorrespondance.getInstance()
-                                    .getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, dimId);
-                                if (dimName != null && !dimName.isBlank()) linkToDimension(m, nid, dimName);
-                            });
-                        }
+                        for (String dimName : referencedDimensionNames(param)) linkToDimension(m, nid, dimName);
                     }
                 }
             }
@@ -358,25 +336,15 @@ public class VPIDependencyDiagramTab implements AbstractVPITab {
         return m;
     }
 
-    private Set<String> extractDimIdsFromConditionXml(String xml) {
-        Set<String> ids = new LinkedHashSet<>();
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document doc = db.parse(new InputSource(new StringReader("<root>" + xml + "</root>")));
-            NodeList rms = doc.getElementsByTagName("resourceModel");
-            for (int i = 0; i < rms.getLength(); i++) {
-                NodeList ch = rms.item(i).getChildNodes();
-                for (int j = 0; j < ch.getLength(); j++) {
-                    if ("entityID".equals(ch.item(j).getNodeName())) {
-                        String id = ch.item(j).getTextContent().trim();
-                        if (!id.isBlank() && !"-1".equals(id)) ids.add(id);
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-        return ids;
+    /** Noms des dimensions référencées par ce paramètre, déposés en attribut caché par Filter/Hierarchies. */
+    private List<String> referencedDimensionNames(Parameters param) {
+        String value = param.getAttributeValue(VPIConstants.PARAMETER_REF_DIMENSIONS);
+        if (value == null || value.isBlank()) return List.of();
+        List<String> names = new ArrayList<>();
+        for (String name : value.split(",\\s*")) {
+            if (!name.isBlank()) names.add(name);
+        }
+        return names;
     }
 
     private void linkToDimension(DiagramModel m, String fromId, String dimName) {

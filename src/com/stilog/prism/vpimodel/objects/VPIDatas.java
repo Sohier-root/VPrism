@@ -22,6 +22,9 @@ import com.stilog.prism.vpimodel.vpsettings.ImportExport;
 import com.stilog.prism.vpimodel.vpsettings.FormModel;
 import com.stilog.prism.vpimodel.vpsettings.ResourceModel;
 import com.stilog.prism.vpimodel.vpsettings.TreeStruct;
+import com.stilog.prism.vpimodel.reader.VpiReaderService;
+import com.visualplanning.vpi.exception.VpiException;
+import com.visualplanning.vpi.model.VpiPlanning;
 
 public class VPIDatas {
 
@@ -109,32 +112,50 @@ public class VPIDatas {
 			e.printStackTrace();
 		}
 		Decompressor.dezipper(vpiPath, outputDir);
-		
+
 		File filesDir = new File(outputDir);
-		
+
+		/*
+		 * Parse VPIReader du même fichier .vpi/.vps (en mémoire, sans passer par filesDir) :
+		 * fournit le graphe typé et déjà résolu que les FileDatas migrées consomment dans
+		 * leur parseXml(Entity) à la place du DOM-walk manuel. Le XML brut par ligne reste
+		 * lu depuis filesDir par FileDatas.parseDatas() pour la fusion (Entity.generateXml()).
+		 */
+		VpiPlanning planning = null;
+		try {
+			planning = VpiReaderService.parse(vpi);
+		}
+		catch (VpiException e) {
+			e.printStackTrace();
+		}
+
 		/*
 		 * Parse des fichiers prioritaire pour correspondances
 		 */
 		//Calendrier
 		calendar = new DailyCalendar(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_DAILY_CALENDAR, VPIConstants.NAME_TREE_DAILYCALENDAR);
+		calendar.setPlanning(planning);
 		calendar.parseDatas();
-		
+
 		//Regle de création d'événement
 		creationRule = new CreationRule(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_CREATION_RULE, VPIConstants.NAME_TREE_CREATIONRULE);
 		creationRule.parseDatas();
-		
+
 		//Regle de création d'événement
 		treeStruct = new TreeStruct(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_EVENTS_STRUCT, VPIConstants.NAME_TREE_TREESTRUCT);
+		treeStruct.setPlanning(planning);
 		treeStruct.parseDatas();
-		
+
 		//Dimension
 		resourceModel = new ResourceModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_RESOURCE_MODEL, VPIConstants.NAME_TREE_RESOURCESMODEL);
+		resourceModel.setPlanning(planning);
 		resourceModel.parseDatas();
-		
+
 		//Formulaires
 		formModel = new FormModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_FORM_MODEL, VPIConstants.NAME_TREE_FORMMODEL);
+		formModel.setPlanning(planning);
 		formModel.parseDatas();
-		
+
 		for(File file : filesDir.listFiles()) {
 			try {
 				switch(file.getName()) {
@@ -143,48 +164,60 @@ public class VPIDatas {
 						resourceModel = new ResourceModel(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESMODEL);
 						resourceModel.parseDatas();
 						break;*/
-						
+
 					case VPIConstants.FILENAME_RESOURCES_FILTER:
 						resourceFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESFILTER);
 						resourceFilter.setFilterCorrespondanceKey(VPIConstants.XML_TAG_FILTER_RESOURCE);
+						resourceFilter.setPlanning(planning);
 						resourceFilter.parseDatas();
 						break;
-						
+
 					case VPIConstants.FILENAME_EVENTS_FILTER:
 						eventFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSFILTER);
 						eventFilter.setFilterCorrespondanceKey(VPIConstants.XML_TAG_FILTER_EVENT);
+						eventFilter.setPlanning(planning);
 						eventFilter.parseDatas();
 						break;
-						
+
 					case VPIConstants.FILENAME_RESOURCES_EXPORT:
 						exportResources = new ImportExport(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESEXPORT);
+						exportResources.setPlanning(planning);
+						exportResources.setContexts(planning != null ? planning.getImportExportSet().getExportEventResourceContexts() : null);
 						exportResources.parseDatas();
 						break;
-						
+
 					case VPIConstants.FILENAME_EVENTS_EXPORT:
 						exportEvents = new ImportExport(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSEXPORT);
+						exportEvents.setPlanning(planning);
+						exportEvents.setContexts(planning != null ? planning.getImportExportSet().getExportEventContexts() : null);
 						exportEvents.parseDatas();
 						break;
-						
+
 					case VPIConstants.FILENAME_RESOURCES_IMPORT:
 						importResources = new ImportExport(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESIMPORT);
 						importResources.setImport(true);
+						importResources.setPlanning(planning);
+						importResources.setContexts(planning != null ? planning.getImportExportSet().getImportEventResourceContexts() : null);
 						importResources.parseDatas();
 						break;
-						
+
 					case VPIConstants.FILENAME_EVENTS_IMPORT:
 						importEvents = new ImportExport(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSIMPORT);
 						importEvents.setImport(true);
+						importEvents.setPlanning(planning);
+						importEvents.setContexts(planning != null ? planning.getImportExportSet().getImportEventContexts() : null);
 						importEvents.parseDatas();
 						break;
-						
+
 					case VPIConstants.FILENAME_EVENTS_STRUCT:
 						hierarchies = new Hierarchies(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSSTRUCT);
+						hierarchies.setPlanning(planning);
 						hierarchies.parseDatas();
 						break;
-						
+
 					case VPIConstants.FILENAME_DAILY_CALENDAR:
 						calendar = new DailyCalendar(file.getAbsolutePath(), VPIConstants.NAME_TREE_DAILYCALENDAR);
+						calendar.setPlanning(planning);
 						calendar.parseDatas();
 						break;
 				}

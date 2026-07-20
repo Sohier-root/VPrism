@@ -31,20 +31,32 @@ import com.stilog.prism.vpimodel.objects.Mergeable;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.Resolveable;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.visualplanning.vpi.model.VpiPlanning;
 
 public abstract class FileDatas extends Resolveable{
-	
+
 	private static final String SEPARATOR = ";";
 	private static final String LINE_SEPARATOR = System.lineSeparator();
 	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-	
+
 	private static final DocumentBuilderFactory DB_FACTORY = DocumentBuilderFactory.newInstance();
-	
+
 	String name;
 	File file;
 	List<Entity> entities = new ArrayList<>();
-	
+
 	private boolean hidden = false;
+
+	/**
+	 * Graphe VPIReader déjà résolu, fourni par VPIDatas aux sous-classes migrées
+	 * pour qu'elles y puisent les valeurs au lieu de re-parser le XML brut.
+	 * Reste {@code null} pour les classes non migrées (ex. CreationRule).
+	 */
+	protected VpiPlanning planning;
+
+	public void setPlanning(VpiPlanning planning) {
+		this.planning = planning;
+	}
 	
 	public FileDatas(String filePath, String name) {
 		super();

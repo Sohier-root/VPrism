@@ -3,16 +3,15 @@ package com.stilog.prism.vpimodel.vpsettings;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
-import com.stilog.prism.comparevpi.utils.MethodUtil;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
+import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
+import com.stilog.prism.vpimodel.reader.RawFragmentIndexer;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.visualplanning.vpi.model.filter.VpiFilter;
+import com.visualplanning.vpi.model.hierarchy.EventHierarchy;
+import com.visualplanning.vpi.model.hierarchy.HierarchyNode;
+import com.visualplanning.vpi.model.hierarchy.ResourceModelNodeEntry;
 
 public class Hierarchies extends FileDatas {
 
@@ -21,76 +20,66 @@ public class Hierarchies extends FileDatas {
 	}
 
 	/*
-	 * PARSE XML
+	 * PARSE (via VPIReader)
 	 */
 	@Override
 	protected List<Parameters> parseXml(Entity entity) {
 		List<Parameters> paramList = new ArrayList<>();
-		
+
+		EventHierarchy hierarchy = findHierarchy(entity.getId());
+		if (hierarchy == null) {
+			System.out.println("Hiérarchie introuvable pour l'entité id=" + entity.getId());
+			return paramList;
+		}
+
 		entity.setMergeable(true);
 		entity.setReplaceable(true);
-		
-		Document doc = getDocument(entity.getAssociatedXml());
-		Element firstNodes = (Element) doc.getDocumentElement().getChildNodes();
-		
-		/*
-		 * Ajout des attribut unique (id, uid ...)
-		 */
-		String id = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_ID).item(0).getTextContent();
-		String uid = firstNodes.getElementsByTagName(VPIConstants.XML_TAG_UID).item(0).getTextContent();
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, id);
-		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, uid);
-		
-		/*
-		 * Récupération de la structure
-		 */
-		paramList.addAll(computeStruct(firstNodes.getElementsByTagName(VPIConstants.XML_TAG_EVENT_STRUCT).item(0)));
-		
-		return paramList;
-	}
-	
-	private List<Parameters> computeStruct(Node parentNode) {
-		List<Parameters> paramList = new ArrayList<>();
-		
-		Element structChild = (Element) parentNode.getChildNodes();
-		NodeList resourceStructNodes = structChild.getElementsByTagName(VPIConstants.XML_TAG_MODEL_STRUCT).item(0).getChildNodes();
-		
-		for(int i = 0 ; i<resourceStructNodes.getLength(); i++) {
-			
-			if (resourceStructNodes.item(i).getNodeType() != Node.ELEMENT_NODE)
-	            continue;
-			
-			Element resource = (Element) resourceStructNodes.item(i);
-			
-			String resourceId = ((Element)resource.getElementsByTagName(VPIConstants.XML_TAG_RESOURCEMODEL).item(0)).getElementsByTagName(VPIConstants.XML_TAG_ENTITYID).item(0).getTextContent();
-			String resourceName = GeneralCorrespondance.getInstance().getCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, resourceId);
-			String mandatory = resource.getElementsByTagName(VPIConstants.XML_TAG_MANDATORY).item(0).getTextContent();
-			
-			Parameters param = new Parameters(resourceName, MethodUtil.nodeToString(resource));
-			param.addAttributes(VPIConstants.PARAMETER_CONDITIONS, computeConditions(resource.getElementsByTagName(VPIConstants.XML_TAG_FILTER).item(0)));
-			param.addAttributes(VPIConstants.PARAMETER_MANDATORY, mandatory);
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_ID, String.valueOf(hierarchy.getId()));
+		entity.addUniqueAttributes(VPIConstants.XML_TAG_UID, hierarchy.getUid());
+
+		List<ResourceModelNodeEntry> entries = flatten(hierarchy.getRootNode());
+		List<String> rawFragments = RawFragmentIndexer.fragmentsByOrder(entity.getAssociatedXml(), VPIConstants.XML_TAG_MODEL_STRUCT);
+
+		for (int i = 0; i < entries.size(); i++) {
+			ResourceModelNodeEntry entry = entries.get(i);
+			String resourceName = entry.getResourceModel().getDisplayValue();
+
+			Parameters param = new Parameters(resourceName);
+			if (i < rawFragments.size()) {
+				param.setInitialXml(rawFragments.get(i));
+				param.setAssociatedXml(rawFragments.get(i));
+			}
+			param.addAttributes(VPIConstants.PARAMETER_CONDITIONS, conditionsText(entry));
+			param.addAttributes(VPIConstants.PARAMETER_MANDATORY, entry.getMandatory().getDisplayValue());
 			param.setMergeable(true);
 			param.setReplaceable(true);
 			paramList.add(param);
 		}
-		
+
 		return paramList;
 	}
-	
-	private String computeConditions(Node parentNode) {
-		try {
-			Element filterNodes = (Element) parentNode.getChildNodes();
-			if(!filterNodes.hasChildNodes())
-				return "";
-			Element filterConditionsNodes = (Element) ((Element) filterNodes.getElementsByTagName(VPIConstants.XML_TAG_FILTERCONDITION).item(0)).getChildNodes();
-			Node conditionsNode = filterConditionsNodes.getElementsByTagName(VPIConstants.XML_TAG_CONDITIONS).item(0);
-			
-			return MethodUtil.nodeToString(conditionsNode);
+
+	private EventHierarchy findHierarchy(int id) {
+		for (EventHierarchy h : this.planning.getHierarchies()) {
+			if (h.getId() == id)
+				return h;
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		return null;
+	}
+
+	/** Aplatit la chaîne récursive de niveaux en une liste, dans l'ordre du document. */
+	private List<ResourceModelNodeEntry> flatten(HierarchyNode node) {
+		List<ResourceModelNodeEntry> all = new ArrayList<>();
+		HierarchyNode current = node;
+		while (current != null) {
+			all.addAll(current.resourceModelEntries());
+			current = current.child().orElse(null);
 		}
-		
-		return "";
+		return all;
+	}
+
+	private String conditionsText(ResourceModelNodeEntry entry) {
+		VpiFilter filter = entry.getFilter() != null ? entry.getFilter().getValue() : null;
+		return filter != null ? FilterConditionFormatter.format(filter.getRootCondition()) : "";
 	}
 }

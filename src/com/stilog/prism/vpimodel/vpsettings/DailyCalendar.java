@@ -17,7 +17,15 @@ public class DailyCalendar extends FileDatas {
 	@Override
 	protected List<Parameters> parseXml(Entity entity) {
 		GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
-		gCorr.addCorrespondance(VPIConstants.XML_TAG_CALENDAR, String.valueOf(entity.getId()), entity.getName());
+		String name = entity.getName();
+
+		if (this.planning != null) {
+			name = this.planning.getCalendarSet().dailyCalendarById(entity.getId())
+					.map(c -> c.getName().getDisplayValue())
+					.orElse(entity.getName());
+		}
+
+		gCorr.addCorrespondance(VPIConstants.XML_TAG_CALENDAR, String.valueOf(entity.getId()), name);
 		return null;
 	}
 

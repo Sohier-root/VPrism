@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeData;
@@ -25,42 +24,6 @@ public class ResourceModel extends FileDatas{
 		super(filePath, name);
 	}
 
-	/**
-	 * Surcharge de parseDatas pour pré-enregistrer tous les noms de dimensions
-	 * dans GeneralCorrespondance AVANT le buildParameters().
-	 *
-	 * Sans ce pré-enregistrement, une rubrique de type ResourceReference qui
-	 * pointe vers une dimension parsée plus tard dans le fichier ne trouve pas
-	 * son nom et affiche un champ vide.
-	 */
-	@Override
-	public void parseDatas() {
-		preRegisterDimensionNames();
-		super.parseDatas();
-	}
-
-	/**
-	 * Lit le fichier ligne par ligne (id;nom;...) et enregistre chaque
-	 * id → nom dans GeneralCorrespondance sous la clé PARAMETER_RESOURCEMODEL,
-	 * sans parser le XML.
-	 */
-	private void preRegisterDimensionNames() {
-		try (java.io.BufferedReader br = new java.io.BufferedReader(
-				new java.io.FileReader(super.file.getAbsolutePath()))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-				String[] values = line.split(";");
-				if (values.length < 2) continue;
-				String id   = values[0].trim();
-				String name = values[1].replace("\"", "").trim();
-				GeneralCorrespondance.getInstance().addCorrespondance(
-						VPIConstants.PARAMETER_RESOURCEMODEL, id, name);
-			}
-		} catch (java.io.IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	/*
 	 * PARSE (via VPIReader)
 	 */
@@ -75,10 +38,6 @@ public class ResourceModel extends FileDatas{
 		}
 
 		List<Parameters> paramList = new ArrayList<>();
-
-		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(dim.getId()), entity.getName());
-		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, dim.getUid(), entity.getName());
-		GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.PARAMETER_RESOURCEMODEL, String.valueOf(dim.getId()), entity.getName());
 
 		/*
 		 * Attributs cachés
@@ -122,9 +81,6 @@ public class ResourceModel extends FileDatas{
 			newParam.setUid(heading.getUid());
 			newParam.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
 			newParam.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));
-
-			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()), heading.getName());
-			GeneralCorrespondance.getInstance().addCorrespondance(VPIConstants.XML_TAG_UID, heading.getUid(), heading.getName());
 
 			// Propriétés déjà rendues sous forme d'attribut visible : à exclure des attributs cachés.
 			Set<Property> alreadyShown = new HashSet<>();

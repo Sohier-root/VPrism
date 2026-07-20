@@ -8,14 +8,12 @@ import java.util.List;
 
 import com.stilog.prism.comparevpi.utils.Decompressor;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
-import com.stilog.prism.vpimodel.vpsettings.DailyCalendar;
 import com.stilog.prism.vpimodel.vpsettings.FileDatas;
 import com.stilog.prism.vpimodel.vpsettings.Filter;
 import com.stilog.prism.vpimodel.vpsettings.Hierarchies;
 import com.stilog.prism.vpimodel.vpsettings.ImportExport;
 import com.stilog.prism.vpimodel.vpsettings.FormModel;
 import com.stilog.prism.vpimodel.vpsettings.ResourceModel;
-import com.stilog.prism.vpimodel.vpsettings.TreeStruct;
 import com.stilog.prism.vpimodel.reader.VpiReaderService;
 import com.visualplanning.vpi.exception.VpiException;
 import com.visualplanning.vpi.model.VpiPlanning;
@@ -39,10 +37,7 @@ public class VPIDatas {
 	Filter resourceFilter, eventFilter;
 	ImportExport exportResources, exportEvents, importResources, importEvents;
 	Hierarchies hierarchies;
-	
-	DailyCalendar calendar;
-	TreeStruct treeStruct;
-	
+
 	public VPIDatas() {
 		this.name = "VPI Datas";
 	}
@@ -120,19 +115,6 @@ public class VPIDatas {
 			e.printStackTrace();
 		}
 
-		/*
-		 * Parse des fichiers prioritaire pour correspondances
-		 */
-		//Calendrier
-		calendar = new DailyCalendar(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_DAILY_CALENDAR, VPIConstants.NAME_TREE_DAILYCALENDAR);
-		calendar.setPlanning(planning);
-		calendar.parseDatas();
-
-		//Hiérarchie d'événement
-		treeStruct = new TreeStruct(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_EVENTS_STRUCT, VPIConstants.NAME_TREE_TREESTRUCT);
-		treeStruct.setPlanning(planning);
-		treeStruct.parseDatas();
-
 		//Dimension
 		resourceModel = new ResourceModel(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_RESOURCE_MODEL, VPIConstants.NAME_TREE_RESOURCESMODEL);
 		resourceModel.setPlanning(planning);
@@ -154,14 +136,14 @@ public class VPIDatas {
 
 					case VPIConstants.FILENAME_RESOURCES_FILTER:
 						resourceFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESFILTER);
-						resourceFilter.setFilterCorrespondanceKey(VPIConstants.XML_TAG_FILTER_RESOURCE);
+						resourceFilter.setFilterKind(VPIConstants.XML_TAG_FILTER_RESOURCE);
 						resourceFilter.setPlanning(planning);
 						resourceFilter.parseDatas();
 						break;
 
 					case VPIConstants.FILENAME_EVENTS_FILTER:
 						eventFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSFILTER);
-						eventFilter.setFilterCorrespondanceKey(VPIConstants.XML_TAG_FILTER_EVENT);
+						eventFilter.setFilterKind(VPIConstants.XML_TAG_FILTER_EVENT);
 						eventFilter.setPlanning(planning);
 						eventFilter.parseDatas();
 						break;
@@ -200,12 +182,6 @@ public class VPIDatas {
 						hierarchies = new Hierarchies(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSSTRUCT);
 						hierarchies.setPlanning(planning);
 						hierarchies.parseDatas();
-						break;
-
-					case VPIConstants.FILENAME_DAILY_CALENDAR:
-						calendar = new DailyCalendar(file.getAbsolutePath(), VPIConstants.NAME_TREE_DAILYCALENDAR);
-						calendar.setPlanning(planning);
-						calendar.parseDatas();
 						break;
 				}
 			}

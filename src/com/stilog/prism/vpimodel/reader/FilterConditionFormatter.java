@@ -1,7 +1,6 @@
 package com.stilog.prism.vpimodel.reader;
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,10 +49,6 @@ public class FilterConditionFormatter {
 		if (dynamic)
 			return "[" + variableName + "]";
 		return value != null ? value : "";
-	}
-
-	public static String formatAll(List<FilterCondition> conditions) {
-		return conditions.stream().map(FilterConditionFormatter::format).collect(Collectors.joining(" ; "));
 	}
 
 	/**

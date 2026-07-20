@@ -10,74 +10,17 @@ public class VPIConstants {
 	public static final String FILENAME_RESOURCES_IMPORT = "importeventresourcecontext.txt";
 	public static final String FILENAME_EVENTS_IMPORT = "importeventcontext.txt";
 	public static final String FILENAME_EVENTS_STRUCT = "eventtreestruct.txt";
-	public static final String FILENAME_DAILY_CALENDAR = "dailycalendar.txt";
 	public static final String FILENAME_HISTORY = "history.txt";
 	public static final String FILENAME_HISTORY_TRACKER = "historytracker.txt";
 	public static final String FILENAME_FORM_MODEL = "formmodel.txt";
-	
-	
-	/*
-	 * XML & Parameters constants
-	 */
-	public static final String XML_TAG_NAME = "name";
-	public static final String XML_TAG_COMMENTS = "comments";
-	public static final String XML_TAG_ID = "ID";
-	public static final String XML_TAG_UID = "UID";
-	public static final String XML_TAG_VALUE = "value";
-	public static final String XML_TAG_RESOURCEMODEL = "resourceModel";
-	public static final String XML_TAG_RESOURCEMODELID = "resourceModelID";
-	public static final String XML_TAG_TYPE = "type";
-	public static final String XML_TAG_ENTITYID = "entityID";
-	public static final String XML_TAG_HEADINGS = "headings";
-	public static final String XML_TAG_COLUMNNAME = "columnName";
-	public static final String XML_TAG_COLUMN = "column";
-	public static final String XML_TAG_SOURCEATTRIBUTE = "sourceAttribute";
-	public static final String XML_TAG_CONFIGURATION = "configuration";
-	public static final String XML_TAG_KEY = "key";
-	public static final String XML_TAG_KEYHEADINGS = "keyHeadings";
-	public static final String XML_TAG_LABELSHEADINGS = "labelsHeadings";
-	public static final String XML_TAG_MANDATORY = "mandatory";
-	public static final String XML_TAG_FILTERCONDITION = "filterCondition";
-	public static final String XML_TAG_FILTER = "filter";
-	public static final String XML_TAG_CONDITIONS = "conditions";
-	public static final String XML_TAG_EXPORTATTRIBUTES = "exportAttributes";
-	public static final String XML_TAG_EVENTPROPERTIES = "eventProperties";
-	public static final String XML_TAG_ATTRIBUTE = "attribute";
-	public static final String XML_TAG_SOURCECONFIG = "sourceConfig";
-	public static final String XML_TAG_ENCODING = "encoding";
-	public static final String XML_TAG_FORMAT = "format";
-	public static final String XML_TAG_SEPARATOR = "separator";
-	public static final String XML_TAG_EVENT_STRUCT = "eventStructNode";
-	public static final String XML_TAG_MODEL_STRUCT = "resourceModelStructs";
-	public static final String XML_TAG_IMPORT_MODE = "importMode";
-	public static final String XML_TAG_DATE_FORMAT = "dateFormat";
-	public static final String XML_TAG_INDEXED = "indexed";
-	public static final String XML_TAG_DEFAULT_VAL = "defaultVal";
-	public static final String XML_TAG_FORBIDDEN_DEFAULT_VAL = "forbiddenDefaultValue";
-	public static final String XML_TAG_LENGHT = "lenght";
-	public static final String XML_TAG_PATTERN = "pattern";
-	public static final String XML_TAG_DBTYPE = "dbType";
-	public static final String XML_TAG_ACTIVATE_EVT_COM = "activateEventForum";
-	public static final String XML_TAG_ACTIVATE_COM = "activateForum";
-	public static final String XML_TAG_ACTIVATE_EVT_HIST = "activatedEventHistoryTracker";
-	public static final String XML_TAG_ACTIVATE_HIST = "activatedHistoryTracker";
-	public static final String XML_TAG_AUTO_FILTER = "autoFilter";
-	public static final String XML_TAG_BUFFERED = "buffered";
-	public static final String XML_TAG_CREATE_EVT = "createEvent";
-	public static final String XML_TAG_TREESTRUCT = "eventTreeStruct";
-	public static final String XML_TAG_CALENDAR = "dailyCalendar";
+
+
 	public static final String XML_TAG_FILTER_RESOURCE = "filterResource";
 	public static final String XML_TAG_FILTER_EVENT = "filterEvent";
-	public static final String XML_TAG_COLOR = "color";
-	public static final String XML_TAG_ARGB = "argb";
-	public static final String XML_TAG_UNIQUE_VALUE_LIST = "uniqueValueList";
-	public static final String XML_TAG_MULTI_VALUE_LIST = "multipleValueList";
-	
+
 	public static final String PARAMETER_NAME = "Nom";
-	public static final String PARAMETER_ID = "ID";
 	public static final String PARAMETER_RESOURCEMODEL = "Dimension";
 	public static final String PARAMETER_TYPE = "Type";
-	public static final String PARAMETER_HEADING = "Heading";
 	public static final String PARAMETER_KEY = "Cle";
 	public static final String PARAMETER_COMMENTS = "Comments";
 	public static final String PARAMETER_KEY_PARENT = "Cle parent";
@@ -91,15 +34,9 @@ public class VPIConstants {
 	public static final String PARAMETER_ENCODING = "Encoding";
 	public static final String PARAMETER_FORMAT = "Format";
 	public static final String PARAMETER_SEPARATOR = "Separateur";
-	public static final String PARAMETER_URL = "Url";
 	public static final String PARAMETER_PARAMETRE = "Parametres";
 	public static final String PARAMETER_IMPORT_MODE = "Mode d'import";
 	public static final String PARAMETER_DATE_FORMAT = "Format de date";
-	public static final String PARAMETER_INDEXED = "Indexe";
-	public static final String PARAMETER_DEFAULT_VAL = "Valeur par defaut";
-	public static final String PARAMETER_FORBIDDEN_DEFAULT_VAL = "Interdire la valeur par défaut";
-	public static final String PARAMETER_LENGHT = "Taille";
-	public static final String PARAMETER_PATTERN = "Format";
 	public static final String PARAMETER_ACTIVATE_EVT_COM = "Commentaire pour evt";
 	public static final String PARAMETER_ACTIVATE_COM = "Commentaire";
 	public static final String PARAMETER_ACTIVATE_EVT_HIST = "Historique pour evt";
@@ -115,7 +52,7 @@ public class VPIConstants {
 	public static final String PARAMETER_FORM_MODEL = "Formulaire";
 	/** Attribut caché : dimensions référencées par une condition de filtre (pour le diagramme de dépendances). */
 	public static final String PARAMETER_REF_DIMENSIONS = "Dimensions référencées";
-	
+
 	public static final String NAME_TREE_RESOURCESMODEL = "Resources Model";
 	public static final String NAME_TREE_RESOURCESFILTER = "Resources Filter";
 	public static final String NAME_TREE_EVENTSFILTER = "Events Filter";
@@ -124,7 +61,5 @@ public class VPIConstants {
 	public static final String NAME_TREE_EVENTSIMPORT = "Events Import";
 	public static final String NAME_TREE_RESOURCESIMPORT = "Resources Import";
 	public static final String NAME_TREE_EVENTSSTRUCT = "Hierarchies";
-	public static final String NAME_TREE_DAILYCALENDAR = "Calendar";
-	public static final String NAME_TREE_TREESTRUCT= "Regle de creation";
 	public static final String NAME_TREE_FORMMODEL = "Formulaires";
 }

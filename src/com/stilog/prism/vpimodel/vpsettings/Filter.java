@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
@@ -15,22 +14,21 @@ import com.visualplanning.vpi.model.filter.VpiFilter;
 public class Filter extends FileDatas{
 
 	/**
-	 * Clé de correspondance utilisée dans GeneralCorrespondance.
-	 * Différente selon le type de filtre (ressource ou événement),
-	 * définie par la sous-classe via setFilterCorrespondanceKey().
+	 * Distingue le type de filtre (ressource ou événement), défini par
+	 * l'appelant via setFilterKind().
 	 */
-	private String filterCorrespondanceKey = VPIConstants.XML_TAG_FILTER_RESOURCE;
+	private String filterKind = VPIConstants.XML_TAG_FILTER_RESOURCE;
 
 	public Filter(String filePath, String name) {
 		super(filePath, name);
 	}
 
-	public void setFilterCorrespondanceKey(String key) {
-		this.filterCorrespondanceKey = key;
+	public void setFilterKind(String kind) {
+		this.filterKind = kind;
 	}
 
 	private boolean isEventFilter() {
-		return VPIConstants.XML_TAG_FILTER_EVENT.equals(filterCorrespondanceKey);
+		return VPIConstants.XML_TAG_FILTER_EVENT.equals(filterKind);
 	}
 
 	/*
@@ -48,13 +46,6 @@ public class Filter extends FileDatas{
 			return paramList;
 		}
 		VpiFilter filter = found.get();
-
-		/*
-		 * Enregistrement dans GeneralCorrespondance pour résolution INFILTER
-		 * Clé : filterCorrespondanceKey (ressource ou événement), valeur : id → nom
-		 */
-		GeneralCorrespondance.getInstance().addCorrespondance(
-			filterCorrespondanceKey, String.valueOf(filter.getId()), entity.getName());
 
 		Parameters newParam = new Parameters(filter.getName().getDisplayValue());
 		newParam.addAttributes(VPIConstants.PARAMETER_CONDITIONS, FilterConditionFormatter.format(filter.getRootCondition()));

@@ -1,24 +1,13 @@
 package com.stilog.prism.vpimodel.reader;
 
-import java.util.Set;
-
 import com.visualplanning.vpi.model.dimension.HeadingType;
 
 /**
- * Libellés français affichés pour chaque {@link HeadingType} VPIReader, et
- * détection des types "calculés" (non éditables), en remplacement de
- * l'ancien {@code resolveTypeLabel(String typeClass)} qui lisait le nom de
- * classe VP directement dans le XML.
+ * Libellés français affichés pour chaque {@link HeadingType} VPIReader, en
+ * remplacement de l'ancien {@code resolveTypeLabel(String typeClass)} qui
+ * lisait le nom de classe VP directement dans le XML.
  */
 public class PropertyLabels {
-
-	private static final Set<HeadingType> COMPUTED_TYPES = Set.of(
-			HeadingType.CONTROL_TOTAL,
-			HeadingType.OPERATION,
-			HeadingType.TEXT_CONCAT,
-			HeadingType.COMPUTED_DATE,
-			HeadingType.EVENT_VALUE,
-			HeadingType.EVENT_SUMMARY);
 
 	private PropertyLabels() {
 	}
@@ -49,10 +38,5 @@ public class PropertyLabels {
 			case BLUEPRINT -> "Plan";
 			case DISTANCE -> "Distance";
 		};
-	}
-
-	/** Champs calculés/dérivés : non mergeable/replaceable, à l'image de l'ancien COMPUTED_TYPES. */
-	public static boolean isComputed(HeadingType type) {
-		return type != null && COMPUTED_TYPES.contains(type);
 	}
 }

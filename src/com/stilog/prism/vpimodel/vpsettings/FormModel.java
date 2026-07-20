@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.stilog.prism.comparevpi.model.GeneralCorrespondance;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeData;
@@ -35,11 +34,6 @@ public class FormModel extends FileDatas {
             return new ArrayList<>();
         }
 
-        GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
-        gCorr.addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(form.getId()), entity.getName());
-        gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, form.getUid(), entity.getName());
-        gCorr.addCorrespondance(VPIConstants.PARAMETER_FORM_MODEL, String.valueOf(form.getId()), entity.getName());
-
         entity.addHiddenAttributes(VPIConstants.PARAMETER_COMMENTS, form.getDescription().getDisplayValue());
 
         return computeHeadings(form);
@@ -60,10 +54,6 @@ public class FormModel extends FileDatas {
         for (Heading heading : form.getHeadings()) {
             Parameters param = new Parameters(heading.getName());
             param.setUid(heading.getUid());
-
-            GeneralCorrespondance gCorr = GeneralCorrespondance.getInstance();
-            gCorr.addCorrespondance(VPIConstants.XML_TAG_ID, String.valueOf(heading.getId()), heading.getName());
-            gCorr.addCorrespondance(VPIConstants.XML_TAG_UID, heading.getUid(), heading.getName());
 
             param.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
             param.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));

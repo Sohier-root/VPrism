@@ -1,24 +1,8 @@
 package com.stilog.prism.vpimodel.vpsettings;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-
-import com.stilog.prism.comparevpi.utils.MethodUtil;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
@@ -37,13 +21,6 @@ public class ImportExport extends FileDatas{
 	/** Liste (parmi les 4 de {@code ImportExportSet}) correspondant à ce fichier, fournie par VPIDatas. */
 	private List<? extends ImportExportContextBase> contexts;
 
-	/**
-	 * XML brut par entité (id → XML décodé), pour {@code readKeyTitles()} uniquement :
-	 * VPIReader ne couvre pas encore keyAttributes/parentKeyAttributes (cf. {@link Definition}).
-	 * Seule classe du modèle à encore lire du XML, en local, sans passer par le reader.
-	 */
-	private final Map<Integer, String> rawXmlById = new HashMap<>();
-
 	public ImportExport(String filePath, String name) {
 		super(filePath, name);
 	}
@@ -52,30 +29,8 @@ public class ImportExport extends FileDatas{
 		this.contexts = contexts;
 	}
 
-	@Override
-	public void parseDatas() {
-		preReadRawXml();
-		super.parseDatas();
-	}
-
-	private void preReadRawXml() {
-		try (BufferedReader br = new BufferedReader(new FileReader(file.getAbsolutePath()))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-				String[] values = line.split(";");
-				if (values.length < 4) continue;
-				int id = Integer.parseInt(values[0]);
-				String xml = MethodUtil.decodeBase64(values[3].replace("\"", ""));
-				rawXmlById.put(id, xml);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	/*
-	 * PARSE (via VPIReader, sauf Cle/Cle parent : non couvert par VPIReader,
-	 * conservé en lecture DOM directe sur le fragment XML de l'entité)
+	 * PARSE (via VPIReader)
 	 */
 	@Override
 	protected List<Parameters> buildParameters(Entity entity) {
@@ -90,7 +45,7 @@ public class ImportExport extends FileDatas{
 		Definition def = context.getDefinition();
 
 		paramList.add(computeCorrespondance(def));
-		paramList.addAll(computeConfiguration(entity, context, def));
+		paramList.addAll(computeConfiguration(context, def));
 
 		return paramList;
 	}
@@ -120,7 +75,7 @@ public class ImportExport extends FileDatas{
 		return param;
 	}
 
-	private List<Parameters> computeConfiguration(Entity entity, ImportExportContextBase context, Definition def) {
+	private List<Parameters> computeConfiguration(ImportExportContextBase context, Definition def) {
 		List<Parameters> paramList = new ArrayList<>();
 
 		/*
@@ -134,11 +89,9 @@ public class ImportExport extends FileDatas{
 		paramList.add(paramSrc);
 
 		/*
-		 * CLE / CLE PARENT — non couvert par VPIReader (Definition n'expose pas
-		 * keyAttributes/parentKeyAttributes) : lu directement dans le fragment XML brut.
+		 * CLE / CLE PARENT
 		 */
-		String entityXml = rawXmlById.get(entity.getId());
-		List<String> keyTitles = readKeyTitles(entityXml, VPIConstants.XML_TAG_KEY_ATTRIBUTES);
+		List<String> keyTitles = def.getKeyAttributeTitles();
 		if (!keyTitles.isEmpty()) {
 			Parameters paramKey = new Parameters(VPIConstants.PARAMETER_KEY);
 			for (int i = 0; i < keyTitles.size(); i++)
@@ -146,7 +99,7 @@ public class ImportExport extends FileDatas{
 			paramList.add(paramKey);
 		}
 
-		List<String> keyParentTitles = readKeyTitles(entityXml, VPIConstants.XML_TAG_PARENT_KEY_ATTRIBUTES);
+		List<String> keyParentTitles = def.getParentKeyAttributeTitles();
 		if (!keyParentTitles.isEmpty()) {
 			Parameters paramKeyParent = new Parameters(VPIConstants.PARAMETER_KEY_PARENT);
 			for (int i = 0; i < keyParentTitles.size(); i++)
@@ -190,43 +143,6 @@ public class ImportExport extends FileDatas{
 				return dim.getName().getDisplayValue();
 		}
 		return null;
-	}
-
-	private List<String> readKeyTitles(String entityXml, String containerTag) {
-		List<String> titles = new ArrayList<>();
-		if (entityXml == null)
-			return titles;
-		try {
-			Document doc = parseXmlFragment(entityXml);
-			NodeList containers = doc.getElementsByTagName(containerTag);
-			if (containers.getLength() == 0)
-				return titles;
-
-			NodeList children = ((Element) containers.item(0)).getChildNodes();
-			for (int i = 0; i < children.getLength(); i++) {
-				Node child = children.item(i);
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-				Element key = (Element) child;
-				NodeList titleNodes = key.getElementsByTagName(VPIConstants.XML_TAG_TITLE);
-				if (titleNodes.getLength() > 0)
-					titles.add(titleNodes.item(0).getTextContent());
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return titles;
-	}
-
-	private Document parseXmlFragment(String xml) throws Exception {
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-		factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-		factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-		factory.setXIncludeAware(false);
-		factory.setExpandEntityReferences(false);
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		return builder.parse(new InputSource(new StringReader(xml)));
 	}
 
 	/*

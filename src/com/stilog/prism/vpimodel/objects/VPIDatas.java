@@ -8,7 +8,6 @@ import java.util.List;
 
 import com.stilog.prism.comparevpi.utils.Decompressor;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
-import com.stilog.prism.vpimodel.vpsettings.CreationRule;
 import com.stilog.prism.vpimodel.vpsettings.DailyCalendar;
 import com.stilog.prism.vpimodel.vpsettings.FileDatas;
 import com.stilog.prism.vpimodel.vpsettings.Filter;
@@ -42,7 +41,6 @@ public class VPIDatas {
 	Hierarchies hierarchies;
 	
 	DailyCalendar calendar;
-	CreationRule creationRule;
 	TreeStruct treeStruct;
 	
 	public VPIDatas() {
@@ -130,11 +128,7 @@ public class VPIDatas {
 		calendar.setPlanning(planning);
 		calendar.parseDatas();
 
-		//Regle de création d'événement
-		creationRule = new CreationRule(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_CREATION_RULE, VPIConstants.NAME_TREE_CREATIONRULE);
-		creationRule.parseDatas();
-
-		//Regle de création d'événement
+		//Hiérarchie d'événement
 		treeStruct = new TreeStruct(filesDir.getAbsolutePath() + "/" + VPIConstants.FILENAME_EVENTS_STRUCT, VPIConstants.NAME_TREE_TREESTRUCT);
 		treeStruct.setPlanning(planning);
 		treeStruct.parseDatas();

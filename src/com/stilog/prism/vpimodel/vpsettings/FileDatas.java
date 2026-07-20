@@ -11,7 +11,6 @@ import java.util.List;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.Resolveable;
-import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.visualplanning.vpi.model.VpiPlanning;
 
 public abstract class FileDatas extends Resolveable{
@@ -25,9 +24,8 @@ public abstract class FileDatas extends Resolveable{
 	private boolean hidden = false;
 
 	/**
-	 * Graphe VPIReader déjà résolu, fourni par VPIDatas aux sous-classes migrées
-	 * pour qu'elles y puisent les valeurs au lieu de re-parser le XML brut.
-	 * Reste {@code null} pour les classes non migrées (ex. CreationRule).
+	 * Graphe VPIReader déjà résolu, fourni par VPIDatas à chaque sous-classe
+	 * pour qu'elle y puise les valeurs au lieu de parser du XML brut.
 	 */
 	protected VpiPlanning planning;
 
@@ -69,9 +67,6 @@ public abstract class FileDatas extends Resolveable{
 		return name;
 	}
 
-	public boolean isExcludedTag(String tagName){
-		return List.of(VPIConstants.XML_TAG_ID, VPIConstants.XML_TAG_URL).contains(tagName);
-	}
 	/*
 	 * Methodes
 	 */

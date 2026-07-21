@@ -25,12 +25,32 @@ public class VPIComparator {
 		try {
 			List<FileDatas> refFiles = ref.getFilesDatas();
 			List<FileDatas> testedFiles = tested.getFilesDatas();
-			for (int i = 0; i < refFiles.size(); i++) {
-				compare(refFiles.get(i), testedFiles.get(i));
+			for (FileDatas refFile : refFiles) {
+				FileDatas testedFile = findByName(testedFiles, refFile.getName());
+				if (testedFile == null) {
+					System.out.println("Le fichier de paramétrage " + refFile.getName() + " est absent du VPI test");
+					refFile.setAnomaly(true);
+					continue;
+				}
+				compare(refFile, testedFile);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Apparie les FileDatas par nom plutôt que par index : {@link VPIDatas#getFilesDatas()}
+	 * construit sa liste par réflexion (ordre non garanti par la JVM) et filtre les champs
+	 * null (fichier de settings absent de l'archive), donc refFiles/testedFiles peuvent ne
+	 * pas avoir la même taille ni le même ordre.
+	 */
+	private static FileDatas findByName(List<FileDatas> files, String name) {
+		for (FileDatas fd : files) {
+			if (fd.getName().equals(name))
+				return fd;
+		}
+		return null;
 	}
 
 	private static void compare(FileDatas ref, FileDatas tested) {

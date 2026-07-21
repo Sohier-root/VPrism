@@ -6,12 +6,21 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.Resolveable;
+import com.stilog.prism.vpimodel.reader.PropertyLabels;
+import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.visualplanning.vpi.model.VpiPlanning;
+import com.visualplanning.vpi.model.dimension.Heading;
+import com.visualplanning.vpi.model.dimension.heading.HeadingMultiChoice;
+import com.visualplanning.vpi.model.dimension.heading.HeadingResourceReference;
+import com.visualplanning.vpi.model.dimension.heading.HeadingUniqueChoice;
+import com.visualplanning.vpi.model.property.Property;
 
 public abstract class FileDatas extends Resolveable{
 
@@ -92,6 +101,49 @@ public abstract class FileDatas extends Resolveable{
 	}
 
 	protected abstract List<Parameters> buildParameters(Entity entity);
+
+	/**
+	 * Construit un {@link Parameters} par rubrique (nom, type, propriétés cachées),
+	 * commun à {@link ResourceModel} et {@link FormModel} qui exposent tous deux une
+	 * {@code List<Heading>} (dimension ou formulaire).
+	 */
+	protected static List<Parameters> computeHeadingParameters(List<Heading> headings) {
+		List<Parameters> result = new ArrayList<>();
+
+		for (Heading heading : headings) {
+			Parameters param = new Parameters(heading.getName());
+			param.setUid(heading.getUid());
+			param.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
+			param.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));
+
+			// Propriétés déjà rendues sous forme d'attribut visible : à exclure des attributs cachés.
+			Set<Property> alreadyShown = new HashSet<>();
+
+			if (heading instanceof HeadingResourceReference ref) {
+				alreadyShown.add(ref.getReferencedDimension());
+				if (ref.getReferencedDimension().getEntityId() != -1) {
+					param.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, ref.getReferencedDimension().getDisplayValue());
+				}
+			}
+			if (heading instanceof HeadingUniqueChoice choice) {
+				alreadyShown.add(choice.getChoices());
+				param.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
+			}
+			if (heading instanceof HeadingMultiChoice choice) {
+				alreadyShown.add(choice.getChoices());
+				param.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
+			}
+
+			for (Property p : heading.getProperties()) {
+				if (alreadyShown.contains(p))
+					continue;
+				param.addHiddenAttributes(p.getLabel(), p.getDisplayValue());
+			}
+
+			result.add(param);
+		}
+		return result;
+	}
 
 	public void reset() {
 		super.reset();

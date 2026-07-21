@@ -416,10 +416,6 @@ public class ComparisonMainPage extends JPanel {
                 diffOnlyBtn.setEnabled(false);
                 treeRight.update(controller.handleFile(rightSelectedFile, TypeFile.COMPARISON_RIGHT), diffOnlyBtn.isSelected());
                 treeLeft.update(controller.getVPIData(TypeFile.COMPARISON_LEFT), diffOnlyBtn.isSelected());
-                controller.getCompleteUnzipFuture(rightSelectedFile, TypeFile.COMPARISON_RIGHT)
-                    .thenAccept(success -> SwingUtilities.invokeLater(() -> {
-                        if (!success) System.err.println("Erreur lors du dézipage complet");
-                    }));
             }
             if (controller.getVPIData(TypeFile.COMPARISON_RIGHT).isParsed()
                     && controller.getVPIData(TypeFile.COMPARISON_LEFT).isParsed()) {

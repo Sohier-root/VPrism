@@ -1,21 +1,14 @@
 package com.stilog.prism.vpimodel.vpsettings;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.TypeData;
-import com.stilog.prism.vpimodel.reader.PropertyLabels;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.visualplanning.vpi.model.dimension.Dimension;
 import com.visualplanning.vpi.model.dimension.Heading;
-import com.visualplanning.vpi.model.dimension.heading.HeadingMultiChoice;
-import com.visualplanning.vpi.model.dimension.heading.HeadingResourceReference;
-import com.visualplanning.vpi.model.dimension.heading.HeadingUniqueChoice;
-import com.visualplanning.vpi.model.property.Property;
 import com.visualplanning.vpi.model.property.PropertyList;
 
 public class ResourceModel extends FileDatas{
@@ -59,7 +52,7 @@ public class ResourceModel extends FileDatas{
 		/*
 		 * Rubriques (headings)
 		 */
-		paramList.addAll(computeHeadings(dim));
+		paramList.addAll(computeHeadingParameters(dim.getHeadings()));
 		paramList.addAll(computeImportantHeadings(entity, dim));
 
 		return paramList;
@@ -71,44 +64,6 @@ public class ResourceModel extends FileDatas{
 				return d;
 		}
 		return null;
-	}
-
-	private List<Parameters> computeHeadings(Dimension dim) {
-		List<Parameters> headings = new ArrayList<>();
-
-		for (Heading heading : dim.getHeadings()) {
-			Parameters newParam = new Parameters(heading.getName());
-			newParam.setUid(heading.getUid());
-			newParam.addAttributes(VPIConstants.PARAMETER_NAME, heading.getName());
-			newParam.addAttributes(VPIConstants.PARAMETER_TYPE, PropertyLabels.label(heading.getHeadingType()));
-
-			// Propriétés déjà rendues sous forme d'attribut visible : à exclure des attributs cachés.
-			Set<Property> alreadyShown = new HashSet<>();
-
-			if (heading instanceof HeadingResourceReference ref) {
-				alreadyShown.add(ref.getReferencedDimension());
-				if (ref.getReferencedDimension().getEntityId() != -1) {
-					newParam.addAttributes(VPIConstants.PARAMETER_RESOURCEMODEL, ref.getReferencedDimension().getDisplayValue());
-				}
-			}
-			if (heading instanceof HeadingUniqueChoice choice) {
-				alreadyShown.add(choice.getChoices());
-				newParam.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
-			}
-			if (heading instanceof HeadingMultiChoice choice) {
-				alreadyShown.add(choice.getChoices());
-				newParam.addAttributes(VPIConstants.PARAMETER_VALUE_LIST, choice.getChoices().getDisplayValue());
-			}
-
-			for (Property p : heading.getProperties()) {
-				if (alreadyShown.contains(p))
-					continue;
-				newParam.addHiddenAttributes(p.getLabel(), p.getDisplayValue());
-			}
-
-			headings.add(newParam);
-		}
-		return headings;
 	}
 
 	private List<Parameters> computeImportantHeadings(Entity entity, Dimension dim) {

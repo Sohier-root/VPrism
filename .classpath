@@ -18,5 +18,6 @@
 	<classpathentry kind="lib" path="lib/log4j-api-2.25.3.jar"/>
 	<classpathentry kind="lib" path="lib/commons-io-2.21.0.jar"/>
 	<classpathentry kind="lib" path="lib/poi-ooxml-lite-5.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/vpi-reader-1.0.0-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

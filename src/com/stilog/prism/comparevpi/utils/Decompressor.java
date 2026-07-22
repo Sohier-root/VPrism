@@ -24,10 +24,10 @@ public class Decompressor {
             ZipEntry entree;
 
             File destDir = new File(dossierDestination);
-            if (destDir.exists()) {
-            	destDir.delete();
-            }
-            
+            deleteRecursively(destDir);
+            destDir.mkdirs();
+            String destDirPath = destDir.getCanonicalPath();
+
             List<String> fileNames = getFilenameConstants(VPIConstants.class);
             while ((entree = zis.getNextEntry()) != null) {
 
@@ -35,6 +35,14 @@ public class Decompressor {
 
                 if(!fileNames.contains(nouveauFichier.getName()))
                 	continue;
+
+                // Sécurité : vérifier que le fichier reste dans le dossier de destination
+                // (une entrée zip malveillante peut contenir des "../" dans son chemin)
+                String destFilePath = nouveauFichier.getCanonicalPath();
+                if (!destFilePath.startsWith(destDirPath + File.separator)) {
+                    throw new IOException("Entrée en dehors du répertoire cible : " + entree.getName());
+                }
+
                 // Créer les dossiers si nécessaire
                 if (entree.isDirectory()) {
                     nouveauFichier.mkdirs();
@@ -43,14 +51,13 @@ public class Decompressor {
                     new File(nouveauFichier.getParent()).mkdirs();
                 }
 
-                FileOutputStream fos = new FileOutputStream(nouveauFichier);
-
-                int longueur;
-                while ((longueur = zis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, longueur);
+                try (FileOutputStream fos = new FileOutputStream(nouveauFichier)) {
+                    int longueur;
+                    while ((longueur = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, longueur);
+                    }
                 }
 
-                fos.close();
                 zis.closeEntry();
             }
 
@@ -60,7 +67,19 @@ public class Decompressor {
             e.printStackTrace();
         }
     }
-    
+
+    /** Supprime récursivement un dossier et son contenu (File.delete() échoue silencieusement sur un dossier non vide). */
+    private static void deleteRecursively(File file) {
+        if (!file.exists()) return;
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                deleteRecursively(child);
+            }
+        }
+        file.delete();
+    }
+
     private static List<String> getFilenameConstants(Class<?> clazz) {
         List<String> result = new ArrayList<>();
 

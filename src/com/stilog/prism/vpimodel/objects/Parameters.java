@@ -1,31 +1,21 @@
 package com.stilog.prism.vpimodel.objects;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
-import com.stilog.prism.vpimodel.utils.VPIConstants;
-
-public class Parameters extends Mergeable{
+public class Parameters extends Resolveable{
 
 	private String name;
 	private String uid;
 	private List<Attribute> attributes = new ArrayList<>();
 	private List<Attribute> hiddenAttributes = new ArrayList<>();
-	
+
 	public Parameters(String name) {
 		this.name = name;
 	}
-	
-	public Parameters(String name, String xml) {
-		this.name = name;
-		this.setInitialXml(xml);
-		this.setAssociatedXml(xml);
-	}
+
 	/*
 	 * METHODES
 	 */
@@ -135,8 +125,7 @@ public class Parameters extends Mergeable{
 		String sep = System.lineSeparator();
 		StringBuilder builder = new StringBuilder();
 		builder.append("\t- Name : " + this.name + sep);
-		builder.append("\t- xml : " + this.getAssociatedXml() + sep);
-		
+
 		return builder.toString();
 	}
 

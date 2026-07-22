@@ -64,7 +64,8 @@ public class Decompressor {
             System.out.println("Décompression terminée !");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new java.io.UncheckedIOException(
+                "Impossible de décompresser le fichier \"" + new File(zipFichier).getName() + "\" : " + e.getMessage(), e);
         }
     }
 

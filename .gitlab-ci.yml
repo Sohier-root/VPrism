@@ -1,6 +1,21 @@
 stages:
+  - test
   - build
   - release
+
+# Nouveau : exécute la suite de tests JUnit (voir pom.xml, dossier test/) sur
+# chaque push. Job séparé de build_exe pour ne pas risquer la pipeline de
+# release existante tant que la disponibilité de Maven sur ce runner n'est
+# pas confirmée.
+test:
+  stage: test
+  tags:
+    - WINDOWS
+  script:
+    - |
+      $env:Path = "$env:JAVA_17_PATH;" + $env:Path
+      java -version
+      mvn -B test
 
 build_exe:
   stage: build

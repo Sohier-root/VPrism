@@ -1,4 +1,5 @@
 bin/
 .settings/
 tmp/
+target/
 src/com/stilog/documentation/templates/~$template.xlsx

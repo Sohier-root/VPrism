@@ -46,12 +46,9 @@ build_exe:
 
       # Assemble dans app_input/ le jar applicatif + toutes les dépendances
       # runtime résolues par Maven (target/lib/, voir maven-dependency-plugin
-      # dans pom.xml) + vpi-reader, en dépendance système donc absente de
-      # target/lib/ (copié directement depuis lib/, seule source de vérité
-      # pour ce jar tant qu'il n'est pas publié sur un dépôt Maven).
+      # dans pom.xml — inclut vpi-reader, résolue depuis local-repo/).
       Copy-Item target\*.jar app_input\ -Force
       Copy-Item target\lib\*.jar app_input\ -Force
-      Copy-Item lib\vpi-reader-*.jar app_input\ -Force
 
       $MAIN_JAR = (Get-ChildItem app_input -Filter "vprism-*.jar" | Select-Object -First 1).Name
       $APP_VERSION = $env:CI_COMMIT_TAG

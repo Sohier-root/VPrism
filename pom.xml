@@ -20,19 +20,26 @@
         <junit.version>5.10.2</junit.version>
     </properties>
 
-    <dependencies>
+    <repositories>
         <!--
-            vpi-reader n'est pas publiée sur un dépôt Maven (pas de registre partagé
-            entre les deux projets à ce jour) : dépendance système sur le jar déjà
-            versionné dans lib/, reconstruit et copié manuellement depuis le dépôt
-            VPIReader lors d'une mise à jour.
+            vpi-reader n'est pas publiée sur un dépôt Maven partagé entre les deux
+            projets à ce jour : "vendorée" dans local-repo/ (voir dépendance
+            ci-dessous) via mvn install:install-file -DlocalRepositoryPath=./local-repo,
+            à refaire lors d'une mise à jour du jar dans lib/. Une dépendance système
+            (scope=system/systemPath) fonctionnait en ligne de commande mais est
+            rejetée par la validation m2e d'Eclipse et dépréciée par Maven lui-même.
         -->
+        <repository>
+            <id>vpi-reader-local</id>
+            <url>file://${project.basedir}/local-repo</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
         <dependency>
             <groupId>com.visualplanning</groupId>
             <artifactId>vpi-reader</artifactId>
             <version>1.0.0-SNAPSHOT</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/vpi-reader-1.0.0-SNAPSHOT.jar</systemPath>
         </dependency>
 
         <dependency>

@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk-17">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17">
 		<attributes>
-			<attribute name="module" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry including="**/*.java" kind="src" output="target/classes" path="src">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="lib/ikonli-swing-12.4.0.jar"/>
 	<classpathentry kind="lib" path="lib/ikonli-materialdesign-pack-12.4.0.jar"/>
 	<classpathentry kind="lib" path="lib/ikonli-core-12.4.0.jar"/>
@@ -19,5 +24,17 @@
 	<classpathentry kind="lib" path="lib/commons-io-2.21.0.jar"/>
 	<classpathentry kind="lib" path="lib/poi-ooxml-lite-5.5.1.jar"/>
 	<classpathentry kind="lib" path="lib/vpi-reader-1.0.0-SNAPSHOT.jar"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry including="**/*.java" kind="src" output="target/test-classes" path="test">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="test" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>

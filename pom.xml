@@ -191,5 +191,42 @@
                 </configuration>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <!--
+                    Fait ignorer par m2e (build incrémental Eclipse uniquement, sans effet
+                    en ligne de commande) l'exécution copy-dependencies : quand le projet
+                    VPIReader est ouvert dans le même workspace, m2e résout vpi-reader comme
+                    une référence directe vers son dossier target/classes plutôt que le jar
+                    packagé, ce que copy-dependencies ne sait pas gérer (MDEP-187). Elle
+                    reste pleinement active pour mvn package (jpackage en CI).
+                -->
+                <plugin>
+                    <groupId>org.eclipse.m2e</groupId>
+                    <artifactId>lifecycle-mapping</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <lifecycleMappingMetadata>
+                            <pluginExecutions>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.apache.maven.plugins</groupId>
+                                        <artifactId>maven-dependency-plugin</artifactId>
+                                        <versionRange>[3.0.0,)</versionRange>
+                                        <goals>
+                                            <goal>copy-dependencies</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore/>
+                                    </action>
+                                </pluginExecution>
+                            </pluginExecutions>
+                        </lifecycleMappingMetadata>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>

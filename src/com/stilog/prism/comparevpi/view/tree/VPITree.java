@@ -38,6 +38,7 @@ public class VPITree extends JTree {
 
 	private ComparisonController controller;
 	private VPITree otherTree;
+	private TreeSearchBar searchBar;
 
 	boolean isRefTree = false;
 	boolean onlyDiff = false;
@@ -97,6 +98,11 @@ public class VPITree extends JTree {
 		this.otherTree = otherTree;
 	}
 
+	/** Barre de recherche associée à cet arbre, rafraîchie automatiquement à chaque {@link #update}. */
+	public void setSearchBar(TreeSearchBar searchBar) {
+		this.searchBar = searchBar;
+	}
+
 	/*
 	 * METHODS
 	 */
@@ -129,6 +135,9 @@ public class VPITree extends JTree {
 
 			// Restaurer l'état d'expansion après la mise à jour
 			restoreExpandedPaths(expandedPaths);
+
+			if (searchBar != null)
+				searchBar.refresh();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

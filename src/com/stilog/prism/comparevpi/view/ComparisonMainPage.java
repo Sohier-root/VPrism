@@ -12,7 +12,9 @@ import com.stilog.prism.comparevpi.controller.ComparisonController;
 import com.stilog.prism.comparevpi.utils.SystemInfo;
 import com.stilog.prism.comparevpi.view.loading.LoadingWindow;
 import com.stilog.prism.comparevpi.view.object.VButton;
+import com.stilog.prism.comparevpi.view.tree.TreeSearchBar;
 import com.stilog.prism.comparevpi.view.tree.VPITree;
+import com.stilog.prism.view.RecentFiles;
 import com.stilog.prism.view.ThemeManager;
 import com.stilog.prism.vpimodel.objects.TypeFile;
 
@@ -43,6 +45,7 @@ public class ComparisonMainPage extends JPanel {
 
     private JTextField rightFileField;
     private JButton browseBtnRight;
+    private JButton recentBtnRight;
     private VPITree treeRight;
     private File rightSelectedFile;
     private JScrollPane scrollPanelRight;
@@ -132,20 +135,34 @@ public class ComparisonMainPage extends JPanel {
         // File row
         JPanel fileRow = new JPanel(new BorderLayout(6, 0));
         fileRow.setOpaque(false);
-        fileRow.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
         JTextField fileField = createStyledTextField();
         JButton browseBtn = createPrimaryButton("Importer…", MaterialDesign.MDI_FOLDER_LOCK_OPEN);
+        JButton recentBtn = createIconOnlyButton(MaterialDesign.MDI_HISTORY, "Fichiers récents");
         browseBtn.setEnabled(isLeft);
+        recentBtn.setEnabled(isLeft);
+        JPanel browseGroup = new JPanel(new BorderLayout(4, 0));
+        browseGroup.setOpaque(false);
+        browseGroup.add(browseBtn, BorderLayout.CENTER);
+        browseGroup.add(recentBtn, BorderLayout.EAST);
         fileRow.add(fileField, BorderLayout.CENTER);
-        fileRow.add(browseBtn, BorderLayout.EAST);
+        fileRow.add(browseGroup, BorderLayout.EAST);
 
         VPITree tree = new VPITree(this.controller, isLeft);
         JScrollPane scroll = createStyledScrollPane(tree);
 
+        TreeSearchBar searchBar = new TreeSearchBar(tree);
+        tree.setSearchBar(searchBar);
+
+        JPanel fileAndSearch = new JPanel(new BorderLayout(0, 8));
+        fileAndSearch.setOpaque(false);
+        fileAndSearch.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        fileAndSearch.add(fileRow, BorderLayout.NORTH);
+        fileAndSearch.add(searchBar, BorderLayout.SOUTH);
+
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
         top.add(titleRow, BorderLayout.NORTH);
-        top.add(fileRow, BorderLayout.CENTER);
+        top.add(fileAndSearch, BorderLayout.CENTER);
 
         wrapper.add(top, BorderLayout.NORTH);
         wrapper.add(scroll, BorderLayout.CENTER);
@@ -157,16 +174,19 @@ public class ComparisonMainPage extends JPanel {
             this.rightFileField = fileField; this.treeRight = tree;
             this.treeRight.setOtherTree(this.treeLeft);
             this.treeLeft.setOtherTree(this.treeRight);
-            this.browseBtnRight = browseBtn; this.scrollPanelRight = scroll;
+            this.browseBtnRight = browseBtn; this.recentBtnRight = recentBtn; this.scrollPanelRight = scroll;
         }
 
         browseBtn.addActionListener(e -> {
-            chooseVPIFile(isLeft);
-            LoadingWindow.run(parentFrame, () -> {
-                processFile(isLeft);
-                if (isLeft) this.browseBtnRight.setEnabled(true);
-            });
+            if (chooseVPIFile(isLeft))
+                loadSelectedFile(isLeft);
         });
+
+        recentBtn.addActionListener(e ->
+            RecentFiles.buildMenu(f -> {
+                selectFile(isLeft, f);
+                loadSelectedFile(isLeft);
+            }).show(recentBtn, 0, recentBtn.getHeight()));
 
         JPanel outer = new JPanel(new BorderLayout());
         outer.setOpaque(false);
@@ -347,6 +367,29 @@ public class ComparisonMainPage extends JPanel {
         return tf;
     }
 
+    private JButton createIconOnlyButton(MaterialDesign icon, String tooltip) {
+        JButton btn = new JButton(FontIcon.of(icon, 16, theme.textDim())) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (isEnabled() && getModel().isRollover()) {
+                    g2.setColor(theme.fieldBorder());
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                }
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setToolTipText(tooltip);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return btn;
+    }
+
     private JButton createPrimaryButton(String label, MaterialDesign icon) {
         JButton btn = new JButton(label, FontIcon.of(icon, 16, Color.WHITE)) {
             @Override
@@ -384,17 +427,33 @@ public class ComparisonMainPage extends JPanel {
     // Business logic (inchangé)
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void chooseVPIFile(Boolean isLeft) {
+    private boolean chooseVPIFile(boolean isLeft) {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         chooser.setFileFilter(new FileNameExtensionFilter("Fichiers VPI/VPS", "vpi", "vps"));
         chooser.setCurrentDirectory(isLeft ? leftSelectedFile : rightSelectedFile);
         int res = chooser.showOpenDialog(this);
         if (res == JFileChooser.APPROVE_OPTION) {
-            File f = chooser.getSelectedFile();
-            if (isLeft) { leftSelectedFile = f; leftFileField.setText(f.getAbsolutePath()); }
-            else         { rightSelectedFile = f; rightFileField.setText(f.getAbsolutePath()); }
+            selectFile(isLeft, chooser.getSelectedFile());
+            return true;
         }
+        return false;
+    }
+
+    private void selectFile(boolean isLeft, File f) {
+        if (isLeft) { leftSelectedFile = f; leftFileField.setText(f.getAbsolutePath()); }
+        else         { rightSelectedFile = f; rightFileField.setText(f.getAbsolutePath()); }
+    }
+
+    private void loadSelectedFile(boolean isLeft) {
+        RecentFiles.add(isLeft ? leftSelectedFile : rightSelectedFile);
+        LoadingWindow.run(parentFrame, () -> {
+            processFile(isLeft);
+            if (isLeft) {
+                this.browseBtnRight.setEnabled(true);
+                this.recentBtnRight.setEnabled(true);
+            }
+        });
     }
 
     public void processFile(boolean isLeft) {

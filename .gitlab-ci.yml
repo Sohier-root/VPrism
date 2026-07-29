@@ -3,17 +3,13 @@ stages:
   - build
   - release
 
-variables:
-  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+# Ce runner n'a aucun accès réseau sortant (ni Maven Central, ni le serveur de
+# distribution de Maven lui-même) : ni mvn, ni le Maven Wrapper ne peuvent
+# fonctionner ici. Les deux jobs ci-dessous compilent et testent en javac/java
+# purs, avec uniquement des jars déjà versionnés dans le dépôt (lib/, test-lib/)
+# — exactement comme fonctionnait build_exe avant l'introduction de Maven.
+# pom.xml reste utile en local (poste de dev avec accès internet, Eclipse/m2e).
 
-cache:
-  key: maven-repo
-  paths:
-    - .m2/repository
-
-# mvn n'est pas installé sur ce runner (seul JAVA_17_PATH l'est) : on passe
-# par le Maven Wrapper (mvnw.cmd), qui télécharge et met en cache sa propre
-# copie de Maven au premier lancement, sans rien à installer sur la machine.
 test:
   stage: test
   tags:
@@ -22,7 +18,27 @@ test:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
       java -version
-      .\mvnw.cmd -B test
+
+      if (Test-Path out) { Remove-Item out -Recurse -Force }
+      if (Test-Path test-out) { Remove-Item test-out -Recurse -Force }
+      New-Item -ItemType Directory -Force -Path out | Out-Null
+      New-Item -ItemType Directory -Force -Path test-out | Out-Null
+
+      $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
+      $CP = ($LIBS.FullName -join ";")
+      $CONSOLE_JAR = "test-lib\junit-platform-console-standalone-1.10.2.jar"
+
+      $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
+      javac -encoding UTF-8 -d out -cp $CP $SOURCES
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      $TEST_SOURCES = Get-ChildItem test -Filter *.java -Recurse | ForEach-Object { $_.FullName }
+      javac -encoding UTF-8 -d test-out -cp "out;$CP;$CONSOLE_JAR" $TEST_SOURCES
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      $RUN_CP = "out;test-out;$CP;$CONSOLE_JAR;test\resources"
+      java -cp $RUN_CP org.junit.platform.console.ConsoleLauncher execute --scan-classpath test-out --details=tree
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 build_exe:
   stage: build
@@ -31,6 +47,7 @@ build_exe:
   variables:
     MAIN_CLASS: "com.stilog.prism.Main"
     APP_NAME: "VPrism"
+    JAR_NAME: "VPrismJar"
   rules:
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       when: on_success
@@ -40,23 +57,21 @@ build_exe:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
       java -version
+      if (Test-Path out) { Remove-Item out -Recurse -Force }
       if (Test-Path app_input) { Remove-Item app_input -Recurse -Force }
+      New-Item -ItemType Directory -Force -Path out
       New-Item -ItemType Directory -Force -Path app_input
-
-      # mvn package (sans -DskipTests) : ne jamais empaqueter un exe depuis du
-      # code dont les tests échouent, même si le stage "test" a été sauté.
-      .\mvnw.cmd -B package
-
-      # Assemble dans app_input/ le jar applicatif + toutes les dépendances
-      # runtime résolues par Maven (target/lib/, voir maven-dependency-plugin
-      # dans pom.xml — inclut vpi-reader, résolue depuis local-repo/).
-      Copy-Item target\*.jar app_input\ -Force
-      Copy-Item target\lib\*.jar app_input\ -Force
-
-      $MAIN_JAR = (Get-ChildItem app_input -Filter "vprism-*.jar" | Select-Object -First 1).Name
+      $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
+      $CP = ($LIBS.FullName -join ";") + ";."
+      $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
+      javac -encoding UTF-8 -d out -cp $CP $SOURCES
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
+      jar cfe "app_input\$($JAR_NAME).jar" $MAIN_CLASS -C out .
+      if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
       $APP_VERSION = $env:CI_COMMIT_TAG
 
-      jpackage --input app_input --main-jar "$MAIN_JAR" --main-class "$MAIN_CLASS" --name "$APP_NAME" --app-version "$APP_VERSION" --type exe  --dest dist --icon "icon/Icone.ico" --java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
+      jpackage --input app_input --main-jar "$($JAR_NAME).jar" --main-class "$MAIN_CLASS" --name "$APP_NAME" --app-version "$APP_VERSION" --type exe  --dest dist --icon "icon/Icone.ico" --java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
 
       # Renommer le fichier exe généré pour inclure "installer"
       $OLD_EXE = "dist\$($APP_NAME)-$($APP_VERSION).exe"

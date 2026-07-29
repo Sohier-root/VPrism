@@ -11,6 +11,9 @@ cache:
   paths:
     - .m2/repository
 
+# mvn n'est pas installé sur ce runner (seul JAVA_17_PATH l'est) : on passe
+# par le Maven Wrapper (mvnw.cmd), qui télécharge et met en cache sa propre
+# copie de Maven au premier lancement, sans rien à installer sur la machine.
 test:
   stage: test
   tags:
@@ -19,7 +22,7 @@ test:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
       java -version
-      mvn -B test
+      .\mvnw.cmd -B test
 
 build_exe:
   stage: build
@@ -42,7 +45,7 @@ build_exe:
 
       # mvn package (sans -DskipTests) : ne jamais empaqueter un exe depuis du
       # code dont les tests échouent, même si le stage "test" a été sauté.
-      mvn -B package
+      .\mvnw.cmd -B package
 
       # Assemble dans app_input/ le jar applicatif + toutes les dépendances
       # runtime résolues par Maven (target/lib/, voir maven-dependency-plugin

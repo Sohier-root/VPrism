@@ -20,20 +20,17 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import com.stilog.prism.comparevpi.controller.ComparisonController;
-import com.stilog.prism.comparevpi.model.dto.MergeRequest;
 import com.stilog.prism.comparevpi.view.filter.FilterCompareDialog;
 import com.stilog.prism.comparevpi.view.filter.FilterDialog;
 import com.stilog.prism.vpimodel.objects.Attribute;
 import com.stilog.prism.vpimodel.objects.Entity;
-import com.stilog.prism.vpimodel.objects.Mergeable;
 import com.stilog.prism.vpimodel.objects.Parameters;
-import com.stilog.prism.vpimodel.objects.Resolveable;
 import com.stilog.prism.vpimodel.objects.VPIDatas;
 import com.stilog.prism.vpimodel.objects.filter.FilterGroupNode;
-import com.stilog.prism.vpimodel.utils.FilterParser;
-import com.stilog.prism.vpimodel.utils.VPIConstants;
+import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
 import com.stilog.prism.vpimodel.vpsettings.FileDatas;
 import com.stilog.prism.vpimodel.vpsettings.Filter;
+import com.visualplanning.vpi.model.filter.FilterCondition;
 
 public class VPITree extends JTree {
 
@@ -259,252 +256,7 @@ public class VPITree extends JTree {
 			menu.add(filterInfo);
 		}
 
-		// Menu contextuel uniquement pour l'arbre de référence
-		if (!isRefTree) return menu;
-
-		// Seulement Parameters et Entity
-		if (!(obj instanceof Parameters || obj instanceof Entity)) return menu;
-
-		// Seulement si l'objet a un problème (absent ou valeur différente)
-		Resolveable resolveable = (Resolveable) obj;
-		boolean hasAnomaly = resolveable.isAnomaly();
-		boolean hasChanged = resolveable.isChanged();
-		if (!hasAnomaly && !hasChanged) return menu;
-
-		MergeRequestFactory factory = new MergeRequestFactory();
-
-		if (obj instanceof Mergeable mergeable) {
-			// Merge : uniquement pour les absents (anomaly), pas pour les valeurs différentes
-			if (hasAnomaly && !hasChanged && mergeable.isMergeable()) {
-				JMenuItem mergeItem = new JMenuItem("Merge");
-				mergeItem.addActionListener(e -> executeMerge(node, factory));
-				menu.add(mergeItem);
-			}
-
-			// Replace : disponible pour absents ET valeurs différentes,
-			// mais pour "changed" uniquement avec le nœud correspondant de l'autre arbre
-			if (mergeable.isReplaceable()) {
-				if (hasChanged) {
-					// Valeur différente : replace forcément avec le nœud correspondant (même nom)
-					if (canPerformReplaceWithCorresponding(node)) {
-						JMenuItem replaceItem = new JMenuItem("Replace");
-						replaceItem.addActionListener(e -> executeReplaceWithCorresponding(node, factory));
-						menu.add(replaceItem);
-					}
-				} else if (hasAnomaly && canPerformReplace(node)) {
-					// Absent : replace libre avec la sélection de l'autre arbre
-					JMenuItem replaceItem = new JMenuItem("Replace");
-					replaceItem.addActionListener(e -> executeReplace(node, factory));
-					menu.add(replaceItem);
-				}
-			}
-		}
-
 		return menu;
-	}
-
-	/**
-	 * Exécute une opération de merge simple (pour les absents)
-	 */
-	private void executeMerge(DefaultMutableTreeNode node, MergeRequestFactory factory) {
-		try {
-			MergeRequest request = factory.createMergeRequest(node);
-			VPIDatas updatedData = controller.performMerge(request);
-			resolveNodeInModel(node);
-			notifyTreeUpdate(updatedData);
-		} catch (Exception ex) {
-			showError("Erreur lors du merge", ex);
-		}
-	}
-
-	/**
-	 * Exécute un replace libre (pour les absents, sélection manuelle dans l'autre arbre)
-	 */
-	private void executeReplace(DefaultMutableTreeNode node, MergeRequestFactory factory) {
-		try {
-			TreePath otherPath = otherTree.getSelectionPath();
-			if (otherPath == null) {
-				showWarning("Aucune sélection dans l'autre arbre");
-				return;
-			}
-
-			DefaultMutableTreeNode otherNode = (DefaultMutableTreeNode) otherPath.getLastPathComponent();
-
-			MergeRequest request = factory.createReplaceRequest(node, otherNode);
-			VPIDatas updatedData = controller.performMerge(request);
-			resolveNodeInModel(node);
-			notifyTreeUpdate(updatedData);
-		} catch (IllegalArgumentException ex) {
-			showWarning(ex.getMessage());
-		} catch (Exception ex) {
-			showError("Erreur lors du replace", ex);
-		}
-	}
-
-	/**
-	 * Pour un nœud "changed" : vérifie que le nœud correspondant (même nom)
-	 * existe dans l'autre arbre et est sélectionné, ou qu'on peut le trouver automatiquement.
-	 * Le replace se fait toujours avec le nœud de même nom côté testé, sans besoin de sélection.
-	 */
-	private boolean canPerformReplaceWithCorresponding(DefaultMutableTreeNode node) {
-		if (otherTree == null) return false;
-		String name = nameOf(node.getUserObject());
-		if (name == null) return false;
-		return findNodeByName(otherTree, node.getUserObject().getClass(), name) != null;
-	}
-
-	/**
-	 * Replace automatique pour un nœud "changed" :
-	 * trouve le nœud correspondant dans l'autre arbre par nom et type, sans sélection manuelle.
-	 * Après le replace, marque le nœud ref en resolve (vert) et rafraîchit les deux arbres.
-	 */
-	private void executeReplaceWithCorresponding(DefaultMutableTreeNode node, MergeRequestFactory factory) {
-		try {
-			String name = nameOf(node.getUserObject());
-			DefaultMutableTreeNode otherNode = findNodeByName(otherTree, node.getUserObject().getClass(), name);
-			if (otherNode == null) {
-				showWarning("Nœud correspondant introuvable dans l'autre arbre.");
-				return;
-			}
-
-			MergeRequest request = factory.createReplaceRequest(node, otherNode);
-			VPIDatas updatedRight = controller.performMerge(request);
-
-			// Marquer resolve sur le nœud ref (dans le modèle, pas juste dans l'arbre)
-			resolveNodeInModel(node);
-
-			// Rafraîchir les deux arbres
-			VPIDatas refDatas = controller.getVPIData(com.stilog.prism.vpimodel.objects.TypeFile.COMPARISON_LEFT);
-			this.update(refDatas, this.onlyDiff);
-			notifyTreeUpdate(updatedRight);
-
-		} catch (IllegalArgumentException ex) {
-			showWarning(ex.getMessage());
-		} catch (Exception ex) {
-			showError("Erreur lors du replace", ex);
-		}
-	}
-
-	/**
-	 * Marque un nœud "changed" comme résolu dans le modèle de données ref,
-	 * puis remonte vers les parents pour recalculer leur état agrégé :
-	 * - resolve (vert) si tous les enfants sont résolus ou neutres
-	 * - changed (orange) s'il reste des enfants changed
-	 * - anomaly (rouge) s'il reste des enfants anomaly
-	 */
-	private void resolveNodeInModel(DefaultMutableTreeNode node) {
-		// 1. Descendre récursivement et marquer tous les enfants en resolve
-		resolveSubtree(node);
-
-		// 2. Remonter vers les parents et recalculer leur état agrégé
-		javax.swing.tree.TreeNode parent = node.getParent();
-		while (parent instanceof DefaultMutableTreeNode parentNode) {
-			Object parentObj = parentNode.getUserObject();
-			if (!(parentObj instanceof Resolveable r)) break;
-
-			boolean anyAnomaly   = false;
-			boolean anyChanged   = false;
-			boolean anyUnresolved = false;
-
-			for (int i = 0; i < parentNode.getChildCount(); i++) {
-				Object childObj = ((DefaultMutableTreeNode) parentNode.getChildAt(i)).getUserObject();
-				if (childObj instanceof Resolveable cr) {
-					if      (cr.isAnomaly())             anyAnomaly    = true;
-					else if (cr.isChanged())             anyChanged    = true;
-					else if (!cr.isResolve())            anyUnresolved = true;
-				}
-			}
-
-			r.setAnomaly(anyAnomaly);
-			r.setChanged(!anyAnomaly && anyChanged);
-			r.setResolve(!anyAnomaly && !anyChanged && !anyUnresolved);
-
-			parent = parentNode.getParent();
-		}
-	}
-
-	/**
-	 * Marque récursivement le nœud et tous ses descendants en resolve.
-	 */
-	private void resolveSubtree(DefaultMutableTreeNode node) {
-		Object obj = node.getUserObject();
-		if (obj instanceof Resolveable r) {
-			r.setChanged(false);
-			r.setAnomaly(false);
-			r.setResolve(true);
-		}
-		for (int i = 0; i < node.getChildCount(); i++) {
-			resolveSubtree((DefaultMutableTreeNode) node.getChildAt(i));
-		}
-	}
-
-	/**
-	 * Retourne le nom d'un objet du modèle (Parameters ou Entity).
-	 */
-	private String nameOf(Object obj) {
-		if (obj instanceof Parameters p) return p.getName();
-		if (obj instanceof Entity e)     return e.getName();
-		return null;
-	}
-
-	/**
-	 * Cherche dans un arbre le premier nœud d'un type et d'un nom donnés.
-	 */
-	private DefaultMutableTreeNode findNodeByName(VPITree tree, Class<?> type, String name) {
-		Object root = tree.getModel().getRoot();
-		if (!(root instanceof DefaultMutableTreeNode)) return null;
-		java.util.Enumeration<?> nodes = ((DefaultMutableTreeNode) root).depthFirstEnumeration();
-		while (nodes.hasMoreElements()) {
-			Object n = nodes.nextElement();
-			if (!(n instanceof DefaultMutableTreeNode tn)) continue;
-			Object obj = tn.getUserObject();
-			if (type.isInstance(obj) && name.equals(nameOf(obj))) return tn;
-		}
-		return null;
-	}
-
-	/**
-	 * Vérifie si on peut effectuer un replace (libre, pour les anomalies)
-	 */
-	private boolean canPerformReplace(DefaultMutableTreeNode node) {
-		if (this.isSelectionEmpty() || otherTree.isSelectionEmpty()) {
-			return false;
-		}
-
-		TreePath path = otherTree.getSelectionPath();
-		DefaultMutableTreeNode otherNode = (DefaultMutableTreeNode) path.getLastPathComponent();
-
-		// Vérifier que les types correspondent
-		return node.getUserObject().getClass().equals(otherNode.getUserObject().getClass());
-	}
-
-	/**
-	 * Notifie la mise à jour des deux arbres après un merge/replace d'anomalie.
-	 * Met à jour otherTree (testé) avec les données mergées,
-	 * et rafraîchit this (ref) pour afficher la couleur resolve (vert).
-	 */
-	private void notifyTreeUpdate(VPIDatas updatedData) {
-		if (otherTree != null) {
-			otherTree.update(updatedData, this.onlyDiff);
-		}
-		// Rafraîchir l'arbre ref pour mettre à jour les couleurs (resolve → vert)
-		VPIDatas refDatas = controller.getVPIData(com.stilog.prism.vpimodel.objects.TypeFile.COMPARISON_LEFT);
-		this.update(refDatas, this.onlyDiff);
-	}
-
-	/**
-	 * Affiche un message d'erreur
-	 */
-	private void showError(String message, Exception ex) {
-		ex.printStackTrace();
-		JOptionPane.showMessageDialog(this, message + " : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-	}
-
-	/**
-	 * Affiche un avertissement
-	 */
-	private void showWarning(String message) {
-		JOptionPane.showMessageDialog(this, message, "Attention", JOptionPane.WARNING_MESSAGE);
 	}
 
 	public void synchronizeExpansion(TreePath sourcePath, boolean expand) {
@@ -585,24 +337,30 @@ public class VPITree extends JTree {
 	    Filter parentFilter = computeFilterNode(node);
 	    if (parentFilter == null) return;
 
-	    // Récupérer le Parameters du nœud courant (ou premier enfant si Entity)
-	    if (obj instanceof Entity) {
+	    // Récupérer l'Entity (nœud courant, ou parent direct si on est déjà sur le Parameters)
+	    Entity entity;
+	    if (obj instanceof Entity ent) {
+	    	entity = ent;
 	    	if (node.getChildCount() == 0) return;
 	    	obj = ((DefaultMutableTreeNode) node.getChildAt(0)).getUserObject();
+	    } else if (obj instanceof Parameters
+	    		&& ((DefaultMutableTreeNode) node.getParent()).getUserObject() instanceof Entity parentEntity) {
+	    	entity = parentEntity;
+	    } else {
+	    	return;
 	    }
 	    if (!(obj instanceof Parameters)) return;
 
 	    Parameters param = (Parameters) obj;
-	    String conditionsXml = param.getAttributeValue(VPIConstants.PARAMETER_CONDITIONS);
-	    if (conditionsXml == null || conditionsXml.isBlank()) return;
 
-	    boolean isEventFilter = VPIConstants.NAME_TREE_EVENTSFILTER.equals(parentFilter.getName());
+	    FilterCondition.LogicGroup root = parentFilter.getRootCondition(entity).orElse(null);
+	    if (root == null) return;
 
-	    // Parser le filtre du côté courant
-	    FilterGroupNode thisGroup = FilterParser.parse(conditionsXml, isEventFilter);
+	    // Convertit le filtre du côté courant
+	    FilterGroupNode thisGroup = FilterConditionFormatter.toFilterGroupNode(root);
 
-	    // Chercher le même filtre dans l'autre arbre
-	    FilterGroupNode otherGroup = findCorrespondingFilter(param.getName(), isEventFilter);
+	    // Cherche le même filtre dans l'autre arbre
+	    FilterGroupNode otherGroup = findCorrespondingFilter(param.getName());
 
 	    if (otherGroup != null) {
 	        // Les deux filtres existent : affichage côte à côte
@@ -621,7 +379,7 @@ public class VPITree extends JTree {
 	 * Cherche dans l'autre arbre un filtre de même nom et retourne son FilterGroupNode parsé.
 	 * Retourne null si l'autre arbre n'est pas chargé ou si le filtre est absent.
 	 */
-	private FilterGroupNode findCorrespondingFilter(String filterName, boolean isEventFilter) {
+	private FilterGroupNode findCorrespondingFilter(String filterName) {
 	    if (otherTree == null) return null;
 
 	    javax.swing.tree.TreeModel model = otherTree.getModel();
@@ -647,9 +405,10 @@ public class VPITree extends JTree {
 	        Filter f = otherTree.computeFilterNode(treeNode);
 	        if (f == null) continue;
 
-	        String conditionsXml = p.getAttributeValue(VPIConstants.PARAMETER_CONDITIONS);
-	        if (conditionsXml == null || conditionsXml.isBlank()) return null;
-	        return FilterParser.parse(conditionsXml, isEventFilter);
+	        Object parentObj = ((DefaultMutableTreeNode) treeNode.getParent()).getUserObject();
+	        if (!(parentObj instanceof Entity otherEntity)) return null;
+
+	        return f.getRootCondition(otherEntity).map(FilterConditionFormatter::toFilterGroupNode).orElse(null);
 	    }
 	    return null;
 	}

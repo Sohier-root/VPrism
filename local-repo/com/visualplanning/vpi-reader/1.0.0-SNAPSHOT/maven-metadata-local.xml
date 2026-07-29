@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>com.visualplanning</groupId>
+  <artifactId>vpi-reader</artifactId>
+  <versioning>
+    <lastUpdated>20260723075600</lastUpdated>
+    <snapshot>
+      <localCopy>true</localCopy>
+    </snapshot>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>1.0.0-SNAPSHOT</value>
+        <updated>20260723075600</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>1.0.0-SNAPSHOT</value>
+        <updated>20260723075600</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+  <version>1.0.0-SNAPSHOT</version>
+</metadata>

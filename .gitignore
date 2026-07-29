@@ -1,4 +1,10 @@
 bin/
 .settings/
 tmp/
+target/
+app_input/
+dist/
+.m2/
+out/
+test-out/
 src/com/stilog/documentation/templates/~$template.xlsx

@@ -1,6 +1,44 @@
 stages:
+  - test
   - build
   - release
+
+# Ce runner n'a aucun accès réseau sortant (ni Maven Central, ni le serveur de
+# distribution de Maven lui-même) : ni mvn, ni le Maven Wrapper ne peuvent
+# fonctionner ici. Les deux jobs ci-dessous compilent et testent en javac/java
+# purs, avec uniquement des jars déjà versionnés dans le dépôt (lib/, test-lib/)
+# — exactement comme fonctionnait build_exe avant l'introduction de Maven.
+# pom.xml reste utile en local (poste de dev avec accès internet, Eclipse/m2e).
+
+test:
+  stage: test
+  tags:
+    - WINDOWS
+  script:
+    - |
+      $env:Path = "$env:JAVA_17_PATH;" + $env:Path
+      java -version
+
+      if (Test-Path out) { Remove-Item out -Recurse -Force }
+      if (Test-Path test-out) { Remove-Item test-out -Recurse -Force }
+      New-Item -ItemType Directory -Force -Path out | Out-Null
+      New-Item -ItemType Directory -Force -Path test-out | Out-Null
+
+      $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
+      $CP = ($LIBS.FullName -join ";")
+      $CONSOLE_JAR = "test-lib\junit-platform-console-standalone-1.10.2.jar"
+
+      $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
+      javac -encoding UTF-8 -d out -cp $CP $SOURCES
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      $TEST_SOURCES = Get-ChildItem test -Filter *.java -Recurse | ForEach-Object { $_.FullName }
+      javac -encoding UTF-8 -d test-out -cp "out;$CP;$CONSOLE_JAR" $TEST_SOURCES
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      $RUN_CP = "out;test-out;$CP;$CONSOLE_JAR;test\resources"
+      java -cp $RUN_CP org.junit.platform.console.ConsoleLauncher execute --scan-classpath test-out --details=tree
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 build_exe:
   stage: build
@@ -27,6 +65,7 @@ build_exe:
       $CP = ($LIBS.FullName -join ";") + ";."
       $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
       javac -encoding UTF-8 -d out -cp $CP $SOURCES
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
       jar cfe "app_input\$($JAR_NAME).jar" $MAIN_CLASS -C out .
       if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }

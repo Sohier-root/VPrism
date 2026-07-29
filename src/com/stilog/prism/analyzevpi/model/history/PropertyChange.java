@@ -2,7 +2,7 @@ package com.stilog.prism.analyzevpi.model.history;
 
 /**
  * Représente un élément {@code <PropertyTracker>} extrait du XML base64
- * d'une ligne {@link HistoryTrackerEntry}.
+ * d'une ligne {@code historytracker.txt}.
  */
 public class PropertyChange {
 

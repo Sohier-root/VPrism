@@ -11,10 +11,11 @@ import com.stilog.prism.vpimodel.objects.VPIDatas;
 import com.stilog.prism.vpimodel.objects.filter.FilterGroupNode;
 import com.stilog.prism.vpimodel.objects.filter.FilterLeafNode;
 import com.stilog.prism.vpimodel.objects.filter.FilterNode;
-import com.stilog.prism.vpimodel.utils.FilterParser;
+import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.stilog.prism.vpimodel.vpsettings.FileDatas;
 import com.stilog.prism.vpimodel.vpsettings.Filter;
+import com.visualplanning.vpi.model.filter.FilterCondition;
 
 public class VPIComparator {
 
@@ -24,12 +25,32 @@ public class VPIComparator {
 		try {
 			List<FileDatas> refFiles = ref.getFilesDatas();
 			List<FileDatas> testedFiles = tested.getFilesDatas();
-			for (int i = 0; i < refFiles.size(); i++) {
-				compare(refFiles.get(i), testedFiles.get(i));
+			for (FileDatas refFile : refFiles) {
+				FileDatas testedFile = findByName(testedFiles, refFile.getName());
+				if (testedFile == null) {
+					System.out.println("Le fichier de paramétrage " + refFile.getName() + " est absent du VPI test");
+					refFile.setAnomaly(true);
+					continue;
+				}
+				compare(refFile, testedFile);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Apparie les FileDatas par nom plutôt que par index : {@link VPIDatas#getFilesDatas()}
+	 * construit sa liste par réflexion (ordre non garanti par la JVM) et filtre les champs
+	 * null (fichier de settings absent de l'archive), donc refFiles/testedFiles peuvent ne
+	 * pas avoir la même taille ni le même ordre.
+	 */
+	private static FileDatas findByName(List<FileDatas> files, String name) {
+		for (FileDatas fd : files) {
+			if (fd.getName().equals(name))
+				return fd;
+		}
+		return null;
 	}
 
 	private static void compare(FileDatas ref, FileDatas tested) {
@@ -108,7 +129,11 @@ public class VPIComparator {
 					}
 
 					// Attribut présent : comparer les valeurs
-					if (!valuesAreEqual(attr.getKey(), refValue, testedValue, isFilterFile)) {
+					boolean equal = (isFilterFile && VPIConstants.PARAMETER_CONDITIONS.equals(attr.getKey()))
+							? filterConditionsAreEqual((Filter) ref, entity, (Filter) tested, testedEntity)
+							: valuesAreEqual(refValue, testedValue);
+
+					if (!equal) {
 						System.out.println("L'attribut " + attr.getKey()
 								+ " a une valeur différente : [" + refValue + "] vs [" + testedValue + "]");
 						attr.setChanged(true);
@@ -122,42 +147,29 @@ public class VPIComparator {
 	}
 
 	/**
-	 * Compare deux valeurs d'attribut.
-	 * Pour l'attribut "Conditions" d'un filtre, utilise une comparaison sémantique
-	 * via FilterParser (insensible à l'ordre des conditions, aux espaces, etc.).
-	 * Pour tous les autres attributs, comparaison de chaîne normalisée.
+	 * Compare deux valeurs d'attribut (comparaison de chaîne normalisée).
 	 */
-	private static boolean valuesAreEqual(String key, String refValue, String testedValue,
-			boolean isFilterFile) {
+	private static boolean valuesAreEqual(String refValue, String testedValue) {
 		if (refValue == null && testedValue == null) return true;
 		if (refValue == null || testedValue == null) return false;
-
-		// Comparaison sémantique pour les conditions de filtre
-		if (isFilterFile && VPIConstants.PARAMETER_CONDITIONS.equals(key)) {
-			return filterConditionsAreEqual(refValue, testedValue);
-		}
-
-		// Comparaison de chaîne normalisée pour tout le reste
 		return refValue.trim().equals(testedValue.trim());
 	}
 
 	/**
-	 * Compare deux XML de filterCondition de façon sémantique :
-	 * parse les deux côtés en FilterGroupNode et compare leur représentation
-	 * canonique (opérateur + conditions triées alphabétiquement par attribut).
-	 * 
-	 * On passe isEventFilter=false car on compare uniquement la structure,
-	 * pas la résolution des noms via GeneralCorrespondance.
+	 * Compare les conditions de deux filtres de façon sémantique, directement sur l'arbre
+	 * typé de VPIReader (insensible à l'ordre des conditions, aux espaces, etc.), sans
+	 * repasser par le texte affiché de l'attribut "Conditions".
 	 */
-	private static boolean filterConditionsAreEqual(String refXml, String testedXml) {
-		try {
-			FilterGroupNode refGroup    = FilterParser.parse(refXml,    false);
-			FilterGroupNode testedGroup = FilterParser.parse(testedXml, false);
-			return canonicalize(refGroup).equals(canonicalize(testedGroup));
-		} catch (Exception e) {
-			// En cas d'erreur de parsing, repli sur comparaison de chaîne
-			return refXml.trim().equals(testedXml.trim());
-		}
+	private static boolean filterConditionsAreEqual(Filter refFilter, Entity refEntity,
+			Filter testedFilter, Entity testedEntity) {
+		FilterCondition.LogicGroup refRoot = refFilter.getRootCondition(refEntity).orElse(null);
+		FilterCondition.LogicGroup testedRoot = testedFilter.getRootCondition(testedEntity).orElse(null);
+		if (refRoot == null && testedRoot == null) return true;
+		if (refRoot == null || testedRoot == null) return false;
+
+		FilterGroupNode refGroup = FilterConditionFormatter.toFilterGroupNode(refRoot);
+		FilterGroupNode testedGroup = FilterConditionFormatter.toFilterGroupNode(testedRoot);
+		return canonicalize(refGroup).equals(canonicalize(testedGroup));
 	}
 
 	/**

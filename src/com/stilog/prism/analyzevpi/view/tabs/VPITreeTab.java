@@ -19,7 +19,7 @@ import com.stilog.prism.analyzevpi.controller.SingleVPIController;
 import com.stilog.prism.comparevpi.view.filter.FilterDialog;
 import com.stilog.prism.comparevpi.view.loading.LoadingWindow;
 import com.stilog.prism.vpimodel.objects.filter.FilterGroupNode;
-import com.stilog.prism.vpimodel.utils.FilterParser;
+import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.stilog.prism.comparevpi.view.tree.CustomTreeCellRenderer;
 import com.stilog.prism.view.ThemeManager;
@@ -28,6 +28,8 @@ import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.objects.VPIDatas;
 import com.stilog.prism.vpimodel.vpsettings.FileDatas;
+import com.stilog.prism.vpimodel.vpsettings.Filter;
+import com.visualplanning.vpi.model.filter.FilterCondition;
 
 public class VPITreeTab implements AbstractVPITab {
 
@@ -207,12 +209,20 @@ public class VPITreeTab implements AbstractVPITab {
     private void tryOpenFilterDialog(DefaultMutableTreeNode node) {
         Object obj = node.getUserObject();
 
-        // Accepter Entity ou Parameters
-        if (obj instanceof Entity) {
+        // Accepter Entity ou Parameters, et retenir l'Entity dans les deux cas
+        Entity entity;
+        if (obj instanceof Entity ent) {
+            entity = ent;
             // Descendre sur le premier enfant Parameters
             if (node.getChildCount() == 0) return;
             node = (DefaultMutableTreeNode) node.getChildAt(0);
             obj  = node.getUserObject();
+        } else if (obj instanceof Parameters
+                && node.getParent() instanceof DefaultMutableTreeNode parentNode
+                && parentNode.getUserObject() instanceof Entity parentEntity) {
+            entity = parentEntity;
+        } else {
+            return;
         }
         if (!(obj instanceof Parameters)) return;
 
@@ -226,20 +236,18 @@ public class VPITreeTab implements AbstractVPITab {
             if (uObj instanceof FileDatas fd) { parentFd = fd; break; }
             current = current.getParent();
         }
-        if (parentFd == null) return;
+        if (!(parentFd instanceof Filter filter)) return;
 
         String fdName = parentFd.getName();
         boolean isFilter = fdName.equals(VPIConstants.NAME_TREE_RESOURCESFILTER)
                         || fdName.equals(VPIConstants.NAME_TREE_EVENTSFILTER);
         if (!isFilter) return;
 
-        boolean isEvent = fdName.equals(VPIConstants.NAME_TREE_EVENTSFILTER);
+        FilterCondition.LogicGroup root = filter.getRootCondition(entity).orElse(null);
+        if (root == null) return;
 
-        String condXml = param.getAttributeValue(VPIConstants.PARAMETER_CONDITIONS);
-        if (condXml == null || condXml.isBlank()) return;
-
-        FilterGroupNode root = FilterParser.parse(condXml, isEvent);
-        new FilterDialog(panel, param.getName(), root).setVisible(true);
+        FilterGroupNode rootNode = FilterConditionFormatter.toFilterGroupNode(root);
+        new FilterDialog(panel, param.getName(), rootNode).setVisible(true);
     }
 
     private JTextField createStyledTextField(String placeholder) {

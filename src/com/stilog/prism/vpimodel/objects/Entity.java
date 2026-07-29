@@ -5,10 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-import com.stilog.prism.comparevpi.utils.MethodUtil;
-import com.stilog.prism.vpimodel.utils.VPIConstants;
-
-public class Entity extends Mergeable{
+public class Entity extends Resolveable{
 
 	private int id;
 	private String name;
@@ -77,33 +74,7 @@ public class Entity extends Mergeable{
 	/*
 	 * METHODS
 	 */
-	
-	public String generateXml() {
-		for(String key : this.getUniqueAttributes().keySet()) {
-			String tagToReplace = "<" + key + ">*</" + key + ">";
-			String newTag = "<" + key + ">" + this.getUniqueAttribute(key) + "</" + key + ">";
-			this.setAssociatedXml(this.getAssociatedXml().replaceFirst(tagToReplace, newTag));
-			if(key.equals(VPIConstants.XML_TAG_ID))
-				this.setId(Integer.parseInt(this.getUniqueAttribute(key)));
-		}
-		
-		for(Parameters param : this.parameters) {
-			if(param.getInitialXml() == null)
-				continue;
-			//Si le paramètre a été ajouté 
-			if(param.isAdded()) {
-				String concatXml = param.getParentTag() + System.lineSeparator() + param.getAssociatedXml();
-				this.setAssociatedXml(this.getAssociatedXml().replace(param.getParentTag(), concatXml));
-			}
-			//Sinon, le paramètre a été remplacé
-			else {
-				this.setAssociatedXml(this.getAssociatedXml().replace(param.getInitialXml(), param.getAssociatedXml()));
-			}
-		}
-		
-		return MethodUtil.encodeBase64(this.getAssociatedXml());
-	}
-	
+
 	@Override
 	public void reset() {
 		super.reset();
@@ -132,8 +103,7 @@ public class Entity extends Mergeable{
 		for(Parameters param : parameters) {
 			builder.append( param.getInfo() + sep);
 		}
-		//builder.append("XML : "+ sep + this.associatedXml + sep);
-		
+
 		return builder.toString();
 	}
 	

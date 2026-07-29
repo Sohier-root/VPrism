@@ -90,14 +90,6 @@ public class EventTreeStruct {
     }
 
     /**
-     * @deprecated Utiliser {@link #matches(Set)} à la place.
-     */
-    @Deprecated
-    public int compatibilityScore(Set<String> filledRmIds) {
-        return matches(filledRmIds) ? matchScore(filledRmIds) : -1;
-    }
-
-    /**
      * Entrée d'une dimension dans l'arbre.
      *
      * @param rmId      identifiant du ResourceModel

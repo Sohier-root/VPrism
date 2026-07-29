@@ -269,7 +269,7 @@ public class VPITreeTab implements AbstractVPITab {
         FilterCondition.LogicGroup root = filter.getRootCondition(entity).orElse(null);
         if (root == null) return;
 
-        FilterGroupNode rootNode = FilterConditionFormatter.toFilterGroupNode(root);
+        FilterGroupNode rootNode = FilterConditionFormatter.toFilterGroupNode(root, filter.getResourceLabelResolver());
         new FilterDialog(panel, param.getName(), rootNode).setVisible(true);
     }
 

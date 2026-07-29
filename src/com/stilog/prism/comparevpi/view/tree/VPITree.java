@@ -366,7 +366,7 @@ public class VPITree extends JTree {
 	    if (root == null) return;
 
 	    // Convertit le filtre du côté courant
-	    FilterGroupNode thisGroup = FilterConditionFormatter.toFilterGroupNode(root);
+	    FilterGroupNode thisGroup = FilterConditionFormatter.toFilterGroupNode(root, parentFilter.getResourceLabelResolver());
 
 	    // Cherche le même filtre dans l'autre arbre
 	    FilterGroupNode otherGroup = findCorrespondingFilter(param.getName());
@@ -417,7 +417,9 @@ public class VPITree extends JTree {
 	        Object parentObj = ((DefaultMutableTreeNode) treeNode.getParent()).getUserObject();
 	        if (!(parentObj instanceof Entity otherEntity)) return null;
 
-	        return f.getRootCondition(otherEntity).map(FilterConditionFormatter::toFilterGroupNode).orElse(null);
+	        return f.getRootCondition(otherEntity)
+	                .map(cond -> FilterConditionFormatter.toFilterGroupNode(cond, f.getResourceLabelResolver()))
+	                .orElse(null);
 	    }
 	    return null;
 	}

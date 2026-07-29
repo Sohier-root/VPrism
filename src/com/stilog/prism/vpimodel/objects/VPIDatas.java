@@ -20,7 +20,7 @@ import com.visualplanning.vpi.model.VpiPlanning;
 
 public class VPIDatas {
 
-	private static final String OUTPUT_DIR = System.getProperty("java.io.tmpdir") + "vpcompare/";
+	private static final String OUTPUT_DIR = new File(System.getProperty("java.io.tmpdir"), "vpcompare").getAbsolutePath() + File.separator;
 	private static final String OUTPUT_DIR_COMPARISON_TESTED = OUTPUT_DIR + "comparison/tested/";
 	private static final String OUTPUT_DIR_COMPARISON_REF    = OUTPUT_DIR + "comparison/ref/";
 	private static final String OUTPUT_DIR_DOC               = OUTPUT_DIR + "documentation/";
@@ -106,13 +106,19 @@ public class VPIDatas {
 		 * Parse VPIReader du même fichier .vpi/.vps (en mémoire, sans passer par filesDir) :
 		 * fournit le graphe typé et déjà résolu que les FileDatas migrées consomment dans
 		 * leur buildParameters(Entity) à la place du DOM-walk manuel.
+		 *
+		 * En cas d'échec (fichier corrompu, format non supporté), on interrompt
+		 * immédiatement plutôt que de continuer avec planning=null : sans ça, les
+		 * FileDatas migrées échouaient plus loin avec une NullPointerException
+		 * cryptique, invisible pour l'utilisateur (voir LoadingWindow.run).
 		 */
-		VpiPlanning planning = null;
+		VpiPlanning planning;
 		try {
 			planning = VpiReaderService.parse(vpi);
 		}
 		catch (VpiException e) {
-			e.printStackTrace();
+			throw new IllegalStateException(
+				"Impossible de lire le fichier VPI/VPS \"" + vpi.getName() + "\" : " + e.getMessage(), e);
 		}
 
 		//Dimension

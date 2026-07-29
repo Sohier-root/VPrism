@@ -1,6 +1,25 @@
 stages:
+  - test
   - build
   - release
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+cache:
+  key: maven-repo
+  paths:
+    - .m2/repository
+
+test:
+  stage: test
+  tags:
+    - WINDOWS
+  script:
+    - |
+      $env:Path = "$env:JAVA_17_PATH;" + $env:Path
+      java -version
+      mvn -B test
 
 build_exe:
   stage: build
@@ -9,7 +28,6 @@ build_exe:
   variables:
     MAIN_CLASS: "com.stilog.prism.Main"
     APP_NAME: "VPrism"
-    JAR_NAME: "VPrismJar"
   rules:
     - if: $CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       when: on_success
@@ -19,20 +37,23 @@ build_exe:
     - |
       $env:Path = "$env:JAVA_17_PATH;" + $env:Path
       java -version
-      if (Test-Path out) { Remove-Item out -Recurse -Force }
       if (Test-Path app_input) { Remove-Item app_input -Recurse -Force }
-      New-Item -ItemType Directory -Force -Path out
       New-Item -ItemType Directory -Force -Path app_input
-      $LIBS = Get-ChildItem lib -Filter *.jar -Recurse
-      $CP = ($LIBS.FullName -join ";") + ";."
-      $SOURCES = Get-ChildItem src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
-      javac -encoding UTF-8 -d out -cp $CP $SOURCES
-      if (Test-Path src) { Copy-Item src\* out -Recurse -Force -Exclude *.java }
-      jar cfe "app_input\$($JAR_NAME).jar" $MAIN_CLASS -C out .
-      if ($LIBS) { Copy-Item lib\*.jar app_input\ -Force }
+
+      # mvn package (sans -DskipTests) : ne jamais empaqueter un exe depuis du
+      # code dont les tests échouent, même si le stage "test" a été sauté.
+      mvn -B package
+
+      # Assemble dans app_input/ le jar applicatif + toutes les dépendances
+      # runtime résolues par Maven (target/lib/, voir maven-dependency-plugin
+      # dans pom.xml — inclut vpi-reader, résolue depuis local-repo/).
+      Copy-Item target\*.jar app_input\ -Force
+      Copy-Item target\lib\*.jar app_input\ -Force
+
+      $MAIN_JAR = (Get-ChildItem app_input -Filter "vprism-*.jar" | Select-Object -First 1).Name
       $APP_VERSION = $env:CI_COMMIT_TAG
 
-      jpackage --input app_input --main-jar "$($JAR_NAME).jar" --main-class "$MAIN_CLASS" --name "$APP_NAME" --app-version "$APP_VERSION" --type exe  --dest dist --icon "icon/Icone.ico" --java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
+      jpackage --input app_input --main-jar "$MAIN_JAR" --main-class "$MAIN_CLASS" --name "$APP_NAME" --app-version "$APP_VERSION" --type exe  --dest dist --icon "icon/Icone.ico" --java-options "-Dfile.encoding=UTF-8" --java-options "-Dsun.jnu.encoding=UTF-8" --win-shortcut
 
       # Renommer le fichier exe généré pour inclure "installer"
       $OLD_EXE = "dist\$($APP_NAME)-$($APP_VERSION).exe"

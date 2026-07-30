@@ -38,6 +38,7 @@ public class VPITree extends JTree {
 
 	private ComparisonController controller;
 	private VPITree otherTree;
+	private TreeSearchBar searchBar;
 
 	boolean isRefTree = false;
 	boolean onlyDiff = false;
@@ -97,6 +98,11 @@ public class VPITree extends JTree {
 		this.otherTree = otherTree;
 	}
 
+	/** Barre de recherche associée à cet arbre, rafraîchie automatiquement à chaque {@link #update}. */
+	public void setSearchBar(TreeSearchBar searchBar) {
+		this.searchBar = searchBar;
+	}
+
 	/*
 	 * METHODS
 	 */
@@ -129,6 +135,9 @@ public class VPITree extends JTree {
 
 			// Restaurer l'état d'expansion après la mise à jour
 			restoreExpandedPaths(expandedPaths);
+
+			if (searchBar != null)
+				searchBar.refresh();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -357,7 +366,7 @@ public class VPITree extends JTree {
 	    if (root == null) return;
 
 	    // Convertit le filtre du côté courant
-	    FilterGroupNode thisGroup = FilterConditionFormatter.toFilterGroupNode(root);
+	    FilterGroupNode thisGroup = FilterConditionFormatter.toFilterGroupNode(root, parentFilter.getResourceLabelResolver());
 
 	    // Cherche le même filtre dans l'autre arbre
 	    FilterGroupNode otherGroup = findCorrespondingFilter(param.getName());
@@ -408,7 +417,9 @@ public class VPITree extends JTree {
 	        Object parentObj = ((DefaultMutableTreeNode) treeNode.getParent()).getUserObject();
 	        if (!(parentObj instanceof Entity otherEntity)) return null;
 
-	        return f.getRootCondition(otherEntity).map(FilterConditionFormatter::toFilterGroupNode).orElse(null);
+	        return f.getRootCondition(otherEntity)
+	                .map(cond -> FilterConditionFormatter.toFilterGroupNode(cond, f.getResourceLabelResolver()))
+	                .orElse(null);
 	    }
 	    return null;
 	}

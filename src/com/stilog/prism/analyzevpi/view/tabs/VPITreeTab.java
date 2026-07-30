@@ -22,6 +22,8 @@ import com.stilog.prism.vpimodel.objects.filter.FilterGroupNode;
 import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.stilog.prism.comparevpi.view.tree.CustomTreeCellRenderer;
+import com.stilog.prism.comparevpi.view.tree.TreeSearchBar;
+import com.stilog.prism.view.RecentFiles;
 import com.stilog.prism.view.ThemeManager;
 import com.stilog.prism.vpimodel.objects.Attribute;
 import com.stilog.prism.vpimodel.objects.Entity;
@@ -43,6 +45,7 @@ public class VPITreeTab implements AbstractVPITab {
     private final JTextField fileField;
     private final JTree tree;
     private final JScrollPane scrollPane;
+    private final TreeSearchBar searchBar;
 
     private final List<Consumer<VPIDatas>> onLoadListeners = new ArrayList<>();
 
@@ -104,11 +107,13 @@ public class VPITreeTab implements AbstractVPITab {
         fileRow.setOpaque(false);
         fileField = createStyledTextField("Aucun fichier sélectionné…");
         JButton browseBtn = createPrimaryButton("Importer…", MaterialDesign.MDI_FOLDER_DOWNLOAD);
+        JButton recentBtn = createIconOnlyButton(MaterialDesign.MDI_HISTORY, "Fichiers récents");
+        JPanel browseGroup = new JPanel(new BorderLayout(4, 0));
+        browseGroup.setOpaque(false);
+        browseGroup.add(browseBtn, BorderLayout.CENTER);
+        browseGroup.add(recentBtn, BorderLayout.EAST);
         fileRow.add(fileField, BorderLayout.CENTER);
-        fileRow.add(browseBtn, BorderLayout.EAST);
-
-        topSection.add(titleRow, BorderLayout.NORTH);
-        topSection.add(fileRow, BorderLayout.CENTER);
+        fileRow.add(browseGroup, BorderLayout.EAST);
 
         // Tree
         tree = new JTree(new DefaultTreeModel(new DefaultMutableTreeNode("VPI Datas")));
@@ -117,6 +122,16 @@ public class VPITreeTab implements AbstractVPITab {
         scrollPane = new JScrollPane(tree);
         scrollPane.setBorder(BorderFactory.createLineBorder(theme.cardBorder(), 1));
         scrollPane.getViewport().setBackground(theme.cardBg());
+
+        searchBar = new TreeSearchBar(tree);
+
+        JPanel fileAndSearch = new JPanel(new BorderLayout(0, 8));
+        fileAndSearch.setOpaque(false);
+        fileAndSearch.add(fileRow, BorderLayout.NORTH);
+        fileAndSearch.add(searchBar, BorderLayout.SOUTH);
+
+        topSection.add(titleRow, BorderLayout.NORTH);
+        topSection.add(fileAndSearch, BorderLayout.CENTER);
 
         // Ouvrir la dialog de filtre au double-clic sur une entité ou un Parameters de type filtre
         tree.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -145,16 +160,23 @@ public class VPITreeTab implements AbstractVPITab {
 
         browseBtn.addActionListener(e -> {
             File chosen = chooseFile();
-            if (chosen != null) {
-                fileField.setText(chosen.getAbsolutePath());
-                LoadingWindow.run(parentFrame, () -> {
-                    VPIDatas data = controller.handleFile(chosen);
-                    SwingUtilities.invokeLater(() -> {
-                        refreshTree(data);
-                        notifyListeners(data);
-                    });
-                });
-            }
+            if (chosen != null)
+                loadFile(chosen);
+        });
+
+        recentBtn.addActionListener(e ->
+            RecentFiles.buildMenu(this::loadFile).show(recentBtn, 0, recentBtn.getHeight()));
+    }
+
+    private void loadFile(File file) {
+        fileField.setText(file.getAbsolutePath());
+        RecentFiles.add(file);
+        LoadingWindow.run(parentFrame, () -> {
+            VPIDatas data = controller.handleFile(file);
+            SwingUtilities.invokeLater(() -> {
+                refreshTree(data);
+                notifyListeners(data);
+            });
         });
     }
 
@@ -181,6 +203,7 @@ public class VPITreeTab implements AbstractVPITab {
             root.add(buildFileNode(fd));
         }
         tree.setModel(new DefaultTreeModel(root));
+        searchBar.refresh();
     }
 
     private DefaultMutableTreeNode buildFileNode(FileDatas fileDatas) {
@@ -246,7 +269,7 @@ public class VPITreeTab implements AbstractVPITab {
         FilterCondition.LogicGroup root = filter.getRootCondition(entity).orElse(null);
         if (root == null) return;
 
-        FilterGroupNode rootNode = FilterConditionFormatter.toFilterGroupNode(root);
+        FilterGroupNode rootNode = FilterConditionFormatter.toFilterGroupNode(root, filter.getResourceLabelResolver());
         new FilterDialog(panel, param.getName(), rootNode).setVisible(true);
     }
 
@@ -271,6 +294,29 @@ public class VPITreeTab implements AbstractVPITab {
         tf.setForeground(theme.textDim());
         tf.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         return tf;
+    }
+
+    private JButton createIconOnlyButton(MaterialDesign icon, String tooltip) {
+        JButton btn = new JButton(FontIcon.of(icon, 16, theme.textDim())) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                if (getModel().isRollover()) {
+                    g2.setColor(theme.fieldBorder());
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                }
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setToolTipText(tooltip);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return btn;
     }
 
     private JButton createPrimaryButton(String label, MaterialDesign icon) {

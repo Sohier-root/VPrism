@@ -17,6 +17,7 @@ import com.visualplanning.vpi.model.dimension.Heading;
 import com.visualplanning.vpi.model.dimension.heading.HeadingResourceReference;
 import com.visualplanning.vpi.model.filter.FilterCondition;
 import com.visualplanning.vpi.model.filter.FilterSet;
+import com.visualplanning.vpi.model.hierarchy.EventHierarchy;
 
 /**
  * Rend un arbre {@link FilterCondition} VPIReader en texte lisible, en
@@ -60,8 +61,9 @@ public class FilterConditionFormatter {
 	}
 
 	/**
-	 * Variante avec résolution du nom des filtres référencés par INFILTER/NOTINFILTER (quand
-	 * {@code planning} est fourni) — voir {@link #isEmbeddedSubFilterOperator}.
+	 * Variante avec résolution du nom des filtres référencés par INFILTER/NOTINFILTER et de la
+	 * hiérarchie référencée par ISA (quand {@code planning} est fourni) — voir
+	 * {@link #isEmbeddedSubFilterOperator} et {@link #formatHierarchyLevelValue}.
 	 */
 	private static String formatValue(String value, boolean dynamic, String variableName, String operator, VpiPlanning planning) {
 		if (dynamic)
@@ -74,7 +76,43 @@ public class FilterConditionFormatter {
 				return "Filtre personnalisé";
 			return resolveFilterNames(trimmed, planning);
 		}
+		if ("ISA".equals(operator))
+			return formatHierarchyLevelValue(value, planning);
 		return value;
+	}
+
+	/**
+	 * Valeur de l'opérateur ISA (ex. sur l'attribut événement "Hierarchy") : VPIReader encode
+	 * {@code <idHiérarchie>:<niveau>} (voir FilterParser.hierarchyLevelValue côté VPIReader,
+	 * qui sépare ces deux champs plutôt que de les concaténer en un nombre illisible comme
+	 * "-1120"). On résout ici le nom de la hiérarchie via {@code planning.getHierarchies()}.
+	 */
+	private static String formatHierarchyLevelValue(String value, VpiPlanning planning) {
+		int sep = value.indexOf(':');
+		if (sep < 0)
+			return value;
+		String idPart = value.substring(0, sep).trim();
+		String levelPart = value.substring(sep + 1).trim();
+		int hierarchyId;
+		try {
+			hierarchyId = Integer.parseInt(idPart);
+		} catch (NumberFormatException e) {
+			return value;
+		}
+		String name = resolveHierarchyName(hierarchyId, planning);
+		return (name != null ? name : idPart) + ", niveau " + levelPart;
+	}
+
+	private static String resolveHierarchyName(int hierarchyId, VpiPlanning planning) {
+		if (planning == null)
+			return null;
+		for (EventHierarchy h : planning.getHierarchies()) {
+			if (h.getId() != hierarchyId)
+				continue;
+			String name = h.getName() != null ? h.getName().getValue() : null;
+			return (name != null && !name.isBlank()) ? name : null;
+		}
+		return null;
 	}
 
 	/**
@@ -122,9 +160,9 @@ public class FilterConditionFormatter {
 	 * par du texte. Sans résolveur (utilisé par la comparaison sémantique, qui compare des
 	 * ID et non des libellés) : équivalent à {@code toFilterGroupNode(condition, null)}.
 	 *
-	 * Limitation connue : INFILTER (référence à un autre filtre) et ISA (référence à une
-	 * hiérarchie) restent en texte brut non résolu, VPIReader n'exposant pas encore cette
-	 * donnée de façon structurée.
+	 * Limitation connue : INFILTER avec un sous-filtre imbriqué (par opposition à un simple ID
+	 * de filtre référencé) reste affiché avec un texte neutre ("Filtre personnalisé") plutôt que
+	 * résolu, VPIReader n'exposant pas (encore) cette donnée de façon structurée et récursive.
 	 */
 	public static FilterGroupNode toFilterGroupNode(FilterCondition condition) {
 		return toFilterGroupNode(condition, null, null);

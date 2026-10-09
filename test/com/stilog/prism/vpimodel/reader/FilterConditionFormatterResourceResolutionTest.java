@@ -147,6 +147,38 @@ class FilterConditionFormatterResourceResolutionTest {
         assertEquals("Mon Filtre Ressource", leaf.getValueDisplay());
     }
 
+    /**
+     * Cas réel "Hierarchy est de type -1120" : ISA encode en fait "12:0" (hiérarchie id=12,
+     * niveau 0) depuis VPIReader — résolu ici en nom de hiérarchie + niveau quand planning
+     * est fourni, sinon replié sur l'ID brut de la hiérarchie (toujours plus lisible que
+     * l'ancien nombre concaténé "-1120").
+     */
+    @Test
+    void isaResoutLeNomDeLaHierarchieEtLeNiveau() throws IOException {
+        VpiPlanning planning = loadPlanningAvecHierarchie(12, "Hiérarchie Production");
+
+        FilterAttribute attribute = new FilterAttribute(99, "Hierarchy", -1, -1);
+        FilterCondition.EventAttributeCondition condition = new FilterCondition.EventAttributeCondition(
+            attribute, "ISA", "12:0", true, false, false, "");
+
+        FilterGroupNode group = FilterConditionFormatter.toFilterGroupNode(condition, null, planning);
+        FilterLeafNode leaf = (FilterLeafNode) group.getChildren().get(0);
+
+        assertEquals("Hiérarchie Production, niveau 0", leaf.getValueDisplay());
+    }
+
+    @Test
+    void isaSansPlanningRepliSurLIdBrutDeLaHierarchie() {
+        FilterAttribute attribute = new FilterAttribute(99, "Hierarchy", -1, -1);
+        FilterCondition.EventAttributeCondition condition = new FilterCondition.EventAttributeCondition(
+            attribute, "ISA", "12:0", true, false, false, "");
+
+        FilterGroupNode group = FilterConditionFormatter.toFilterGroupNode(condition);
+        FilterLeafNode leaf = (FilterLeafNode) group.getChildren().get(0);
+
+        assertEquals("12, niveau 0", leaf.getValueDisplay());
+    }
+
     private static FilterCondition.ResourceAttributeCondition listCondition(String value) {
         FilterAttribute attribute = new FilterAttribute(0, "Equipe", 2, -1);
         return new FilterCondition.ResourceAttributeCondition(
@@ -256,6 +288,31 @@ class FilterConditionFormatterResourceResolutionTest {
             zos.closeEntry();
             zos.putNextEntry(new ZipEntry("eventresourcefilter.txt"));
             zos.write(filterTxt.getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+        }
+
+        return VpiPlanning.parse(VpiArchive.read(new ByteArrayInputStream(bos.toByteArray())));
+    }
+
+    /**
+     * Construit un VpiPlanning avec une unique hiérarchie nommée (eventtreestruct.txt), pour
+     * tester la résolution du nom de hiérarchie référencé par ISA (planning.getHierarchies()).
+     */
+    private VpiPlanning loadPlanningAvecHierarchie(int hierarchyId, String hierarchyName) throws IOException {
+        String hierarchyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<com.visualplanning.data.event.EventHierarchy>"
+            + "<ID>" + hierarchyId + "</ID><UID>H-UID</UID><comments></comments>"
+            + "</com.visualplanning.data.event.EventHierarchy>";
+        String hierarchyTxt = hierarchyId + ";\"" + hierarchyName + "\";0;\"" + b64(hierarchyXml) + "\"\n";
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(bos)) {
+            zos.putNextEntry(new ZipEntry("resourcemodel.txt"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("formmodel.txt"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("eventtreestruct.txt"));
+            zos.write(hierarchyTxt.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
         }
 

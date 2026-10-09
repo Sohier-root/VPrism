@@ -89,17 +89,27 @@ public class FilterConditionFormatter {
 	 */
 	private static String formatHierarchyLevelValue(String value, VpiPlanning planning) {
 		int sep = value.indexOf(':');
-		if (sep < 0)
+		if (sep < 0) {
+			VpsLabelResolver.logDebug("[FilterConditionFormatter] ISA value='" + value
+					+ "' : pas de ':' trouvé (jar vpi-reader pas à jour ? devrait être 'idHiérarchie:niveau'), repli sur brut");
 			return value;
+		}
 		String idPart = value.substring(0, sep).trim();
 		String levelPart = value.substring(sep + 1).trim();
 		int hierarchyId;
 		try {
 			hierarchyId = Integer.parseInt(idPart);
 		} catch (NumberFormatException e) {
+			VpsLabelResolver.logDebug("[FilterConditionFormatter] ISA value='" + value
+					+ "' : partie ID non numérique ('" + idPart + "'), repli sur brut");
 			return value;
 		}
 		String name = resolveHierarchyName(hierarchyId, planning);
+		if (name == null) {
+			VpsLabelResolver.logDebug("[FilterConditionFormatter] ISA hierarchyId=" + hierarchyId
+					+ " niveau=" + levelPart + " planning=" + (planning == null ? "absent" : "présent")
+					+ " : nom de hiérarchie non résolu, repli sur ID brut");
+		}
 		return (name != null ? name : idPart) + ", niveau " + levelPart;
 	}
 

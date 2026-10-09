@@ -42,6 +42,10 @@ public abstract class FileDatas extends Resolveable{
 		this.planning = planning;
 	}
 
+	public VpiPlanning getPlanning() {
+		return planning;
+	}
+
 	public FileDatas(String filePath, String name) {
 		super();
 		this.file = new File(filePath);

@@ -12,6 +12,8 @@ import com.stilog.prism.vpimodel.objects.filter.FilterLeafNode;
 import com.stilog.prism.vpimodel.objects.filter.FilterNode;
 import com.visualplanning.vpi.model.VpiPlanning;
 import com.visualplanning.vpi.model.dimension.Dimension;
+import com.visualplanning.vpi.model.dimension.Heading;
+import com.visualplanning.vpi.model.dimension.heading.HeadingResourceReference;
 import com.visualplanning.vpi.model.filter.FilterCondition;
 
 /**
@@ -65,7 +67,7 @@ public class FilterConditionFormatter {
 	 * donnée de façon structurée.
 	 */
 	public static FilterGroupNode toFilterGroupNode(FilterCondition condition) {
-		return toFilterGroupNode(condition, null);
+		return toFilterGroupNode(condition, null, null);
 	}
 
 	/**
@@ -74,24 +76,35 @@ public class FilterConditionFormatter {
 	 * de filtre. {@code resolver} peut être null (résolution dégradée sur ID brut).
 	 */
 	public static FilterGroupNode toFilterGroupNode(FilterCondition condition, VpsLabelResolver resolver) {
+		return toFilterGroupNode(condition, resolver, null);
+	}
+
+	/**
+	 * Variante complète : {@code planning} permet en plus de retrouver la dimension
+	 * réellement référencée par un attribut "référence de ressource" porté par une autre
+	 * dimension (ex. l'attribut "Plant" du Work Center référence la dimension Plant) —
+	 * voir {@link #resolveTargetDimensionId}. Sans {@code planning}, on retombe sur
+	 * {@code resourceModelEntityId()} tel quel.
+	 */
+	public static FilterGroupNode toFilterGroupNode(FilterCondition condition, VpsLabelResolver resolver, VpiPlanning planning) {
 		if (condition instanceof FilterCondition.LogicGroup g) {
 			FilterGroupNode node = new FilterGroupNode(g.operator());
 			for (FilterCondition child : g.conditions())
-				node.addChild(toFilterNode(child, resolver));
+				node.addChild(toFilterNode(child, resolver, planning));
 			return node;
 		}
 		FilterGroupNode wrapper = new FilterGroupNode("AND");
-		wrapper.addChild(toFilterNode(condition, resolver));
+		wrapper.addChild(toFilterNode(condition, resolver, planning));
 		return wrapper;
 	}
 
-	private static FilterNode toFilterNode(FilterCondition condition, VpsLabelResolver resolver) {
+	private static FilterNode toFilterNode(FilterCondition condition, VpsLabelResolver resolver, VpiPlanning planning) {
 		if (condition instanceof FilterCondition.LogicGroup g)
-			return toFilterGroupNode(g, resolver);
+			return toFilterGroupNode(g, resolver, planning);
 		if (condition instanceof FilterCondition.EventAttributeCondition c)
 			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
 		if (condition instanceof FilterCondition.ResourceAttributeCondition c)
-			return new FilterLeafNode(c.attribute().title(), c.operator(), formatResourceValue(c, resolver), c.dynamic());
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatResourceValue(c, resolver, planning), c.dynamic());
 		if (condition instanceof FilterCondition.HistoryCondition c)
 			return new FilterLeafNode("Historique." + c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
 		if (condition instanceof FilterCondition.FormAttributeCondition c)
@@ -104,22 +117,24 @@ public class FilterConditionFormatter {
 	/**
 	 * Valeur d'une condition sur attribut ressource, avec résolution des ID de ressources
 	 * en noms lisibles quand un résolveur est fourni : la valeur brute est une liste d'ID
-	 * séparés par ", " (ex. "3, 1") dans la dimension cible {@code resourceModelEntityId()}.
+	 * séparés par ", " (ex. "3, 1") dans la dimension cible (voir {@link #resolveTargetDimensionId}).
 	 * Repli sur l'ID brut si le résolveur est absent, ou pour tout ID non résolu (ressource
 	 * supprimée depuis, dimension non chargée…).
 	 */
-	private static String formatResourceValue(FilterCondition.ResourceAttributeCondition c, VpsLabelResolver resolver) {
+	private static String formatResourceValue(FilterCondition.ResourceAttributeCondition c, VpsLabelResolver resolver, VpiPlanning planning) {
 		String raw = formatValue(c.value(), c.dynamic(), c.variableName());
 		if (c.dynamic() || resolver == null || c.value() == null)
 			return raw;
-		if (c.resourceModelEntityId() == -1) {
+
+		int targetDimId = resolveTargetDimensionId(c, planning);
+		if (targetDimId == -1) {
 			VpsLabelResolver.logDebug("[FilterConditionFormatter] attribut='" + c.attribute().title()
 					+ "' operator='" + c.operator() + "' value='" + c.value()
-					+ "' : resourceModelEntityId=-1 (pas une référence de ressource), repli sur brut");
+					+ "' : aucune dimension cible trouvée, repli sur brut");
 			return raw;
 		}
 
-		String tableName = "eventresource" + c.resourceModelEntityId();
+		String tableName = "eventresource" + targetDimId;
 		List<String> resolved = new ArrayList<>();
 		boolean anyResolved = false;
 		for (String token : c.value().split(",\\s*")) {
@@ -132,12 +147,46 @@ public class FilterConditionFormatter {
 			if (label == null || label.isBlank()) {
 				VpsLabelResolver.logDebug("[FilterConditionFormatter] attribut='" + c.attribute().title()
 						+ "' operator='" + c.operator() + "' table='" + tableName + "' id='" + token.trim()
-						+ "' : non résolu (resourceModelEntityId=" + c.resourceModelEntityId() + ")");
+						+ "' : non résolu (dimension cible=" + targetDimId + ")");
 			}
 			resolved.add(label != null && !label.isBlank() ? label : token.trim());
 			anyResolved |= (label != null && !label.isBlank());
 		}
 		return anyResolved ? String.join(", ", resolved) : raw;
+	}
+
+	/**
+	 * Détermine la dimension réellement référencée par les valeurs de cette condition.
+	 *
+	 * <p>{@code resourceModelEntityId()} (lu depuis {@code <resourceModel><entityID>} dans le
+	 * XML de la condition) ne désigne PAS la dimension cible lorsque l'attribut "référence de
+	 * ressource" est porté par une AUTRE dimension que celle filtrée (ex. l'attribut "Plant"
+	 * du Work Center référence la dimension Plant) : il vaut alors l'ID de la dimension
+	 * PROPRIÉTAIRE de l'attribut (Work Center), identique à {@code attribute().resourceModelId()}.
+	 * La vraie cible doit être retrouvée via la définition du Heading "ResourceReference"
+	 * correspondant sur la dimension propriétaire.
+	 *
+	 * <p>Repli sur {@code resourceModelEntityId()} si {@code planning} est absent, si la
+	 * dimension propriétaire ou le heading ne sont pas trouvés, ou si l'attribut n'a pas de
+	 * dimension propriétaire (ex. condition portée directement par un événement).
+	 */
+	private static int resolveTargetDimensionId(FilterCondition.ResourceAttributeCondition c, VpiPlanning planning) {
+		int ownerDimId = c.attribute().resourceModelId();
+		if (planning != null && ownerDimId != -1) {
+			for (Dimension dim : planning.getDimensions()) {
+				if (dim.getId() != ownerDimId)
+					continue;
+				for (Heading h : dim.getHeadings()) {
+					if (h.getId() == c.attribute().attributeId() && h instanceof HeadingResourceReference hrr) {
+						int refId = hrr.getReferencedDimension().getEntityId();
+						if (refId != -1)
+							return refId;
+					}
+				}
+				break;
+			}
+		}
+		return c.resourceModelEntityId();
 	}
 
 	/**

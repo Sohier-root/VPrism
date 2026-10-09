@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.stilog.prism.analyzevpi.model.history.VpsLabelResolver;
@@ -37,23 +38,42 @@ public class FilterConditionFormatter {
 			return "(" + joined + ")";
 		}
 		if (condition instanceof FilterCondition.EventAttributeCondition c)
-			return c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName());
+			return c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName(), c.operator());
 		if (condition instanceof FilterCondition.ResourceAttributeCondition c)
-			return c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName());
+			return c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName(), c.operator());
 		if (condition instanceof FilterCondition.HistoryCondition c)
-			return "Historique." + c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName());
+			return "Historique." + c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName(), c.operator());
 		if (condition instanceof FilterCondition.FormAttributeCondition c)
-			return c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName());
+			return c.attribute().title() + " " + c.operator() + " " + formatValue(c.value(), c.dynamic(), c.variableName(), c.operator());
 		if (condition instanceof FilterCondition.EventFilterCondition c)
 			return c.conditionType() + " " + c.operator() + (c.filterValue() != null ? " " + c.filterValue() : "");
 
 		return condition.toString();
 	}
 
-	private static String formatValue(String value, boolean dynamic, String variableName) {
+	/** Un ID de filtre référencé (ex. INFILTER) ou une liste d'ID de ressources (ex. IN) : chiffres, virgules, espaces. */
+	private static final Pattern SIMPLE_NUMERIC_LIST = Pattern.compile("\\d+(\\s*,\\s*\\d+)*");
+
+	private static String formatValue(String value, boolean dynamic, String variableName, String operator) {
 		if (dynamic)
 			return "[" + variableName + "]";
-		return value != null ? value : "";
+		if (value == null)
+			return "";
+		if (isEmbeddedSubFilterOperator(operator) && !SIMPLE_NUMERIC_LIST.matcher(value.trim()).matches())
+			return "(sous-filtre imbriqué)";
+		return value;
+	}
+
+	/**
+	 * INFILTER/NOTINFILTER peuvent référencer un filtre existant par ID (valeur simple, ex.
+	 * "53") OU embarquer un filtre entier ad-hoc (anonyme, potentiellement récursif) dans le
+	 * XML de la condition — VPIReader ne distingue pas encore les deux cas et aplatit tout le
+	 * texte du filtre embarqué en une chaîne illisible. En attendant une résolution complète
+	 * (parsing récursif du sous-filtre côté VPIReader), on détecte ce cas via la forme de la
+	 * valeur et on affiche un texte neutre plutôt que ce charabia.
+	 */
+	private static boolean isEmbeddedSubFilterOperator(String operator) {
+		return "INFILTER".equals(operator) || "NOTINFILTER".equals(operator);
 	}
 
 	/**
@@ -102,13 +122,13 @@ public class FilterConditionFormatter {
 		if (condition instanceof FilterCondition.LogicGroup g)
 			return toFilterGroupNode(g, resolver, planning);
 		if (condition instanceof FilterCondition.EventAttributeCondition c)
-			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator()), c.dynamic());
 		if (condition instanceof FilterCondition.ResourceAttributeCondition c)
 			return new FilterLeafNode(c.attribute().title(), c.operator(), formatResourceValue(c, resolver, planning), c.dynamic());
 		if (condition instanceof FilterCondition.HistoryCondition c)
-			return new FilterLeafNode("Historique." + c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
+			return new FilterLeafNode("Historique." + c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator()), c.dynamic());
 		if (condition instanceof FilterCondition.FormAttributeCondition c)
-			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName()), c.dynamic());
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator()), c.dynamic());
 		if (condition instanceof FilterCondition.EventFilterCondition c)
 			return new FilterLeafNode(c.conditionType().name(), c.operator(), c.filterValue() != null ? c.filterValue() : "", false);
 		return new FilterLeafNode(condition.toString(), "", "", false);
@@ -122,8 +142,9 @@ public class FilterConditionFormatter {
 	 * supprimée depuis, dimension non chargée…).
 	 */
 	private static String formatResourceValue(FilterCondition.ResourceAttributeCondition c, VpsLabelResolver resolver, VpiPlanning planning) {
-		String raw = formatValue(c.value(), c.dynamic(), c.variableName());
-		if (c.dynamic() || resolver == null || c.value() == null)
+		String raw = formatValue(c.value(), c.dynamic(), c.variableName(), c.operator());
+		if (c.dynamic() || resolver == null || c.value() == null
+				|| (isEmbeddedSubFilterOperator(c.operator()) && !SIMPLE_NUMERIC_LIST.matcher(c.value().trim()).matches()))
 			return raw;
 
 		int targetDimId = resolveTargetDimensionId(c, planning);

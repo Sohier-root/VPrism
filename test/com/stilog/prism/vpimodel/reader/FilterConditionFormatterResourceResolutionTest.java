@@ -94,6 +94,41 @@ class FilterConditionFormatterResourceResolutionTest {
         assertEquals("1, 3", leaf.getValueDisplay());
     }
 
+    /**
+     * INFILTER référençant un filtre existant par ID (valeur simple) : affiché tel quel.
+     */
+    @Test
+    void infilterAvecUnSimpleIdDeFiltreEstAfficheTelQuel() {
+        FilterAttribute attribute = new FilterAttribute(0, "DEPARTMENT", -1, -1);
+        FilterCondition.EventAttributeCondition condition = new FilterCondition.EventAttributeCondition(
+            attribute, "INFILTER", "53", true, false, false, "");
+
+        FilterGroupNode group = FilterConditionFormatter.toFilterGroupNode(condition);
+        FilterLeafNode leaf = (FilterLeafNode) group.getChildren().get(0);
+
+        assertEquals("53", leaf.getValueDisplay());
+    }
+
+    /**
+     * INFILTER avec un sous-filtre embarqué (valeur = XML aplati en texte illisible, ex.
+     * UID + booléens + mots-clés concaténés) : affiché avec un texte neutre plutôt que ce
+     * charabia, en attendant une résolution complète côté VPIReader (choix explicite —
+     * voir la discussion sur le cas "WBS element Number est dans le filtre").
+     */
+    @Test
+    void infilterAvecUnSousFiltreEmbarqueAfficheUnTexteNeutre() {
+        FilterAttribute attribute = new FilterAttribute(0, "WBS element Number", 4, -1);
+        String valeurAplatie = "FF58-5C07-9D73-3AFF-5550-5911-436E-07EE-1-1false-196D4-0972-C56E"
+            + "-A331-6812-D8D5-28A9-C409-1-1true-104NETWORKfalsetrue";
+        FilterCondition.EventAttributeCondition condition = new FilterCondition.EventAttributeCondition(
+            attribute, "INFILTER", valeurAplatie, true, false, false, "");
+
+        FilterGroupNode group = FilterConditionFormatter.toFilterGroupNode(condition);
+        FilterLeafNode leaf = (FilterLeafNode) group.getChildren().get(0);
+
+        assertEquals("(sous-filtre imbriqué)", leaf.getValueDisplay());
+    }
+
     private static FilterCondition.ResourceAttributeCondition listCondition(String value) {
         FilterAttribute attribute = new FilterAttribute(0, "Equipe", 2, -1);
         return new FilterCondition.ResourceAttributeCondition(

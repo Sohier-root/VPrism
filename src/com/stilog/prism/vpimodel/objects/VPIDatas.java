@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.stilog.prism.analyzevpi.model.history.VpsLabelResolver;
 import com.stilog.prism.comparevpi.utils.Decompressor;
 import com.stilog.prism.vpimodel.utils.VPIConstants;
 import com.stilog.prism.vpimodel.vpsettings.FileDatas;
@@ -38,6 +39,14 @@ public class VPIDatas {
 	ImportExport exportResources, exportEvents, importResources, importEvents;
 	Hierarchies hierarchies;
 
+	/**
+	 * Résolveur de labels de ressources (id → nom), coûteux à charger (scan complet
+	 * de l'archive) : chargé paresseusement au premier appel de
+	 * {@link #getResourceLabelResolver()}, uniquement quand l'affichage d'un filtre
+	 * en a réellement besoin (voir Filter.resolverSupplier).
+	 */
+	private VpsLabelResolver resourceLabelResolver;
+
 	public VPIDatas() {
 		this.name = "VPI Datas";
 	}
@@ -59,6 +68,23 @@ public class VPIDatas {
 
 	public Filter getEventFilter() {
 		return eventFilter;
+	}
+
+	/**
+	 * Charge (au premier appel seulement, puis met en cache) le résolveur de labels
+	 * de ressources pour ce fichier. Ne rien appeler ici tant qu'aucun affichage n'en
+	 * a besoin : c'est un scan complet de l'archive, coûteux sur de gros fichiers.
+	 */
+	public VpsLabelResolver getResourceLabelResolver() {
+		if (resourceLabelResolver == null) {
+			resourceLabelResolver = new VpsLabelResolver();
+			try {
+				resourceLabelResolver.load(new File(filePath));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return resourceLabelResolver;
 	}
 
 	/*
@@ -144,6 +170,7 @@ public class VPIDatas {
 						resourceFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_RESOURCESFILTER);
 						resourceFilter.setFilterKind(VPIConstants.XML_TAG_FILTER_RESOURCE);
 						resourceFilter.setPlanning(planning);
+						resourceFilter.setResolverSupplier(this::getResourceLabelResolver);
 						resourceFilter.parseDatas();
 						break;
 
@@ -151,6 +178,7 @@ public class VPIDatas {
 						eventFilter = new Filter(file.getAbsolutePath(), VPIConstants.NAME_TREE_EVENTSFILTER);
 						eventFilter.setFilterKind(VPIConstants.XML_TAG_FILTER_EVENT);
 						eventFilter.setPlanning(planning);
+						eventFilter.setResolverSupplier(this::getResourceLabelResolver);
 						eventFilter.parseDatas();
 						break;
 

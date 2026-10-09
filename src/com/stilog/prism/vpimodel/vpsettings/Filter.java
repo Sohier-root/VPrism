@@ -3,7 +3,9 @@ package com.stilog.prism.vpimodel.vpsettings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
+import com.stilog.prism.analyzevpi.model.history.VpsLabelResolver;
 import com.stilog.prism.vpimodel.objects.Entity;
 import com.stilog.prism.vpimodel.objects.Parameters;
 import com.stilog.prism.vpimodel.reader.FilterConditionFormatter;
@@ -19,12 +21,29 @@ public class Filter extends FileDatas{
 	 */
 	private String filterKind = VPIConstants.XML_TAG_FILTER_RESOURCE;
 
+	/**
+	 * Résolveur de labels de ressources (VpsLabelResolver, coûteux à charger),
+	 * fourni paresseusement par VPIDatas — n'est réellement chargé (scan complet
+	 * de l'archive) que si {@link #getResourceLabelResolver()} est appelé, c'est-à-dire
+	 * uniquement quand l'utilisateur affiche un filtre dont une condition en a besoin.
+	 */
+	private Supplier<VpsLabelResolver> resolverSupplier;
+
 	public Filter(String filePath, String name) {
 		super(filePath, name);
 	}
 
 	public void setFilterKind(String kind) {
 		this.filterKind = kind;
+	}
+
+	public void setResolverSupplier(Supplier<VpsLabelResolver> resolverSupplier) {
+		this.resolverSupplier = resolverSupplier;
+	}
+
+	/** Charge (au premier appel) puis retourne le résolveur de labels de ressources, ou null si indisponible. */
+	public VpsLabelResolver getResourceLabelResolver() {
+		return resolverSupplier != null ? resolverSupplier.get() : null;
 	}
 
 	private boolean isEventFilter() {

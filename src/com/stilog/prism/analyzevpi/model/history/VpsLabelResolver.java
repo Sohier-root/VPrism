@@ -47,6 +47,12 @@ public class VpsLabelResolver {
         } catch (Exception ignored) {}
     }
 
+    /** Point d'entrée public pour que d'autres classes (ex. FilterConditionFormatter)
+     *  journalisent dans le même fichier de diagnostic. */
+    public static void logDebug(String msg) {
+        log(msg);
+    }
+
     // ── Colonnes techniques fixes ──────────────────────────────────────────────
     private static final Set<String> FIXED_COLS = Set.of(
         "ID", "UID", "argb", "pattern",

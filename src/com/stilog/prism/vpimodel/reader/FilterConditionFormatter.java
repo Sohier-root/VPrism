@@ -110,8 +110,14 @@ public class FilterConditionFormatter {
 	 */
 	private static String formatResourceValue(FilterCondition.ResourceAttributeCondition c, VpsLabelResolver resolver) {
 		String raw = formatValue(c.value(), c.dynamic(), c.variableName());
-		if (c.dynamic() || resolver == null || c.value() == null || c.resourceModelEntityId() == -1)
+		if (c.dynamic() || resolver == null || c.value() == null)
 			return raw;
+		if (c.resourceModelEntityId() == -1) {
+			VpsLabelResolver.logDebug("[FilterConditionFormatter] attribut='" + c.attribute().title()
+					+ "' operator='" + c.operator() + "' value='" + c.value()
+					+ "' : resourceModelEntityId=-1 (pas une référence de ressource), repli sur brut");
+			return raw;
+		}
 
 		String tableName = "eventresource" + c.resourceModelEntityId();
 		List<String> resolved = new ArrayList<>();
@@ -122,6 +128,11 @@ public class FilterConditionFormatter {
 				label = resolver.resolveTypeAndId(tableName, Integer.parseInt(token.trim()));
 			} catch (NumberFormatException ignored) {
 				// jeton non numérique : on le garde tel quel
+			}
+			if (label == null || label.isBlank()) {
+				VpsLabelResolver.logDebug("[FilterConditionFormatter] attribut='" + c.attribute().title()
+						+ "' operator='" + c.operator() + "' table='" + tableName + "' id='" + token.trim()
+						+ "' : non résolu (resourceModelEntityId=" + c.resourceModelEntityId() + ")");
 			}
 			resolved.add(label != null && !label.isBlank() ? label : token.trim());
 			anyResolved |= (label != null && !label.isBlank());

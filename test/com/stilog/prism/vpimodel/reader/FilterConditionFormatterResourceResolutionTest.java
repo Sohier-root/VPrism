@@ -126,7 +126,25 @@ class FilterConditionFormatterResourceResolutionTest {
         FilterGroupNode group = FilterConditionFormatter.toFilterGroupNode(condition);
         FilterLeafNode leaf = (FilterLeafNode) group.getChildren().get(0);
 
-        assertEquals("(sous-filtre imbriqué)", leaf.getValueDisplay());
+        assertEquals("Filtre personnalisé", leaf.getValueDisplay());
+    }
+
+    /**
+     * Cas réel "OUTSOURCE est dans le filtre 97" : INFILTER avec un simple ID de filtre
+     * référencé — résolu en son nom via VpiPlanning.getFilterSet() quand planning est fourni.
+     */
+    @Test
+    void infilterAvecUnIdDeFiltreEtPlanningResoutLeNomDuFiltre() throws IOException {
+        VpiPlanning planning = loadPlanningAvecFiltreNomme(97, "Mon Filtre Ressource");
+
+        FilterAttribute attribute = new FilterAttribute(0, "OUTSOURCE", 4, -1);
+        FilterCondition.ResourceAttributeCondition condition = new FilterCondition.ResourceAttributeCondition(
+            attribute, 4, "INFILTER", true, "97", true, false, false, "");
+
+        FilterGroupNode group = FilterConditionFormatter.toFilterGroupNode(condition, null, planning);
+        FilterLeafNode leaf = (FilterLeafNode) group.getChildren().get(0);
+
+        assertEquals("Mon Filtre Ressource", leaf.getValueDisplay());
     }
 
     private static FilterCondition.ResourceAttributeCondition listCondition(String value) {
@@ -213,6 +231,31 @@ class FilterConditionFormatterResourceResolutionTest {
             zos.write(resourceModelTxt.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
             zos.putNextEntry(new ZipEntry("formmodel.txt"));
+            zos.closeEntry();
+        }
+
+        return VpiPlanning.parse(VpiArchive.read(new ByteArrayInputStream(bos.toByteArray())));
+    }
+
+    /**
+     * Construit un VpiPlanning avec un unique filtre ressource nommé, pour tester la
+     * résolution du nom d'un filtre référencé par INFILTER (FilterSet.resourceFilterById).
+     */
+    private VpiPlanning loadPlanningAvecFiltreNomme(int filterId, String filterName) throws IOException {
+        String filterXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<com.visualplanning.data.filter.EventResourceFilter>"
+            + "<ID>" + filterId + "</ID><UID>F-UID</UID><comments></comments>"
+            + "</com.visualplanning.data.filter.EventResourceFilter>";
+        String filterTxt = filterId + ";\"" + filterName + "\";0;\"" + b64(filterXml) + "\"\n";
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(bos)) {
+            zos.putNextEntry(new ZipEntry("resourcemodel.txt"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("formmodel.txt"));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("eventresourcefilter.txt"));
+            zos.write(filterTxt.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
         }
 

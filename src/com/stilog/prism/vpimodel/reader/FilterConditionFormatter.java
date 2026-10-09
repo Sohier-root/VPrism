@@ -16,6 +16,7 @@ import com.visualplanning.vpi.model.dimension.Dimension;
 import com.visualplanning.vpi.model.dimension.Heading;
 import com.visualplanning.vpi.model.dimension.heading.HeadingResourceReference;
 import com.visualplanning.vpi.model.filter.FilterCondition;
+import com.visualplanning.vpi.model.filter.FilterSet;
 
 /**
  * Rend un arbre {@link FilterCondition} VPIReader en texte lisible, en
@@ -55,25 +56,64 @@ public class FilterConditionFormatter {
 	private static final Pattern SIMPLE_NUMERIC_LIST = Pattern.compile("\\d+(\\s*,\\s*\\d+)*");
 
 	private static String formatValue(String value, boolean dynamic, String variableName, String operator) {
+		return formatValue(value, dynamic, variableName, operator, null);
+	}
+
+	/**
+	 * Variante avec résolution du nom des filtres référencés par INFILTER/NOTINFILTER (quand
+	 * {@code planning} est fourni) — voir {@link #isEmbeddedSubFilterOperator}.
+	 */
+	private static String formatValue(String value, boolean dynamic, String variableName, String operator, VpiPlanning planning) {
 		if (dynamic)
 			return "[" + variableName + "]";
 		if (value == null)
 			return "";
-		if (isEmbeddedSubFilterOperator(operator) && !SIMPLE_NUMERIC_LIST.matcher(value.trim()).matches())
-			return "(sous-filtre imbriqué)";
+		if (isEmbeddedSubFilterOperator(operator)) {
+			String trimmed = value.trim();
+			if (!SIMPLE_NUMERIC_LIST.matcher(trimmed).matches())
+				return "Filtre personnalisé";
+			return resolveFilterNames(trimmed, planning);
+		}
 		return value;
 	}
 
 	/**
 	 * INFILTER/NOTINFILTER peuvent référencer un filtre existant par ID (valeur simple, ex.
-	 * "53") OU embarquer un filtre entier ad-hoc (anonyme, potentiellement récursif) dans le
-	 * XML de la condition — VPIReader ne distingue pas encore les deux cas et aplatit tout le
-	 * texte du filtre embarqué en une chaîne illisible. En attendant une résolution complète
+	 * "53", résolue en son nom via {@link #resolveFilterNames}) OU embarquer un filtre entier
+	 * ad-hoc (anonyme, potentiellement récursif) dans le XML de la condition — VPIReader ne
+	 * distingue pas encore les deux cas et aplatit ce second cas en texte brut illisible (UID,
+	 * booléens et mots-clés concaténés sans séparateur). En attendant une résolution complète
 	 * (parsing récursif du sous-filtre côté VPIReader), on détecte ce cas via la forme de la
 	 * valeur et on affiche un texte neutre plutôt que ce charabia.
 	 */
 	private static boolean isEmbeddedSubFilterOperator(String operator) {
 		return "INFILTER".equals(operator) || "NOTINFILTER".equals(operator);
+	}
+
+	/** Résout chaque ID de filtre (séparés par ", ") en son nom, via les filtres settings de {@code planning}. */
+	private static String resolveFilterNames(String idList, VpiPlanning planning) {
+		if (planning == null || planning.getFilterSet() == null)
+			return idList;
+		FilterSet filterSet = planning.getFilterSet();
+		List<String> resolved = new ArrayList<>();
+		for (String token : idList.split(",\\s*")) {
+			String name = resolveFilterName(token.trim(), filterSet);
+			resolved.add(name != null ? name : token.trim());
+		}
+		return String.join(", ", resolved);
+	}
+
+	private static String resolveFilterName(String token, FilterSet filterSet) {
+		try {
+			int id = Integer.parseInt(token);
+			return filterSet.resourceFilterById(id)
+					.or(() -> filterSet.eventFilterById(id))
+					.map(f -> f.getName().getValue())
+					.filter(n -> n != null && !n.isBlank())
+					.orElse(null);
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 
 	/**
@@ -122,13 +162,13 @@ public class FilterConditionFormatter {
 		if (condition instanceof FilterCondition.LogicGroup g)
 			return toFilterGroupNode(g, resolver, planning);
 		if (condition instanceof FilterCondition.EventAttributeCondition c)
-			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator()), c.dynamic());
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator(), planning), c.dynamic());
 		if (condition instanceof FilterCondition.ResourceAttributeCondition c)
 			return new FilterLeafNode(c.attribute().title(), c.operator(), formatResourceValue(c, resolver, planning), c.dynamic());
 		if (condition instanceof FilterCondition.HistoryCondition c)
-			return new FilterLeafNode("Historique." + c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator()), c.dynamic());
+			return new FilterLeafNode("Historique." + c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator(), planning), c.dynamic());
 		if (condition instanceof FilterCondition.FormAttributeCondition c)
-			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator()), c.dynamic());
+			return new FilterLeafNode(c.attribute().title(), c.operator(), formatValue(c.value(), c.dynamic(), c.variableName(), c.operator(), planning), c.dynamic());
 		if (condition instanceof FilterCondition.EventFilterCondition c)
 			return new FilterLeafNode(c.conditionType().name(), c.operator(), c.filterValue() != null ? c.filterValue() : "", false);
 		return new FilterLeafNode(condition.toString(), "", "", false);
@@ -142,9 +182,8 @@ public class FilterConditionFormatter {
 	 * supprimée depuis, dimension non chargée…).
 	 */
 	private static String formatResourceValue(FilterCondition.ResourceAttributeCondition c, VpsLabelResolver resolver, VpiPlanning planning) {
-		String raw = formatValue(c.value(), c.dynamic(), c.variableName(), c.operator());
-		if (c.dynamic() || resolver == null || c.value() == null
-				|| (isEmbeddedSubFilterOperator(c.operator()) && !SIMPLE_NUMERIC_LIST.matcher(c.value().trim()).matches()))
+		String raw = formatValue(c.value(), c.dynamic(), c.variableName(), c.operator(), planning);
+		if (c.dynamic() || resolver == null || c.value() == null || isEmbeddedSubFilterOperator(c.operator()))
 			return raw;
 
 		int targetDimId = resolveTargetDimensionId(c, planning);
